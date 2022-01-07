@@ -1,0 +1,3 @@
+[submodule "submodules/assets"]
+	path = submodules/assets
+	url = https://github.com/xenotux/assets

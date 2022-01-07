@@ -19,7 +19,7 @@ endif ()
 target_include_directories(editor PUBLIC ${Engine.Dir.INCLUDE} ${Editor.Dir.INCLUDE} ${Editor.Dir.SRC} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(editor engine Qt5::Core Qt5::Widgets)
 
-file(GLOB_RECURSE Sample.AssetPack assets/sample/assets*.pak)
-file(COPY ${Sample.AssetPack} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+set(Assets submodules/assets)
+file(COPY ${Assets} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_compile_definitions(MANA_EXPORT=)

@@ -39,7 +39,7 @@ MainWindow::MainWindow() {
 
     rootLayout = new QHBoxLayout();
 
-    archive = std::make_unique<DirectoryArchive>(std::filesystem::current_path().string());
+    archive = std::make_unique<DirectoryArchive>(std::filesystem::current_path().string() + "/assets");
     assetManager = std::make_unique<AssetManager>(*archive);
 
     renderWidget = new RenderWidgetQt(this, *assetManager);
