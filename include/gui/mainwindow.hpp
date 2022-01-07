@@ -34,6 +34,8 @@
 #include "gui/tool/filebrowser.hpp"
 #include "gui/dialog/projectbuilddialog.hpp"
 
+#include "compat/renderwidgetqt.hpp"
+
 class MainWindow : public QMainWindow {
 Q_OBJECT
 public:
