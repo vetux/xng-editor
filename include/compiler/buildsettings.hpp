@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MANA_BUILDSETTINGS_HPP
-#define MANA_BUILDSETTINGS_HPP
+#ifndef XEDITOR_BUILDSETTINGS_HPP
+#define XEDITOR_BUILDSETTINGS_HPP
 
 #include "compiler/buildoptimization.hpp"
 #include "compiler/buildplatform.hpp"
@@ -34,4 +34,4 @@ struct BuildSettings {
     BuildOptimization optimization{};
 };
 
-#endif //MANA_BUILDSETTINGS_HPP
+#endif //XEDITOR_BUILDSETTINGS_HPP

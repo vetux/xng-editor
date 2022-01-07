@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MANA_BUILDOPTIMIZATION_HPP
-#define MANA_BUILDOPTIMIZATION_HPP
+#ifndef XEDITOR_BUILDOPTIMIZATION_HPP
+#define XEDITOR_BUILDOPTIMIZATION_HPP
 
 enum BuildOptimization {
     NONE,
@@ -28,4 +28,4 @@ enum BuildOptimization {
     OPTIMIZE_SIZE
 };
 
-#endif //MANA_BUILDOPTIMIZATION_HPP
+#endif //XEDITOR_BUILDOPTIMIZATION_HPP

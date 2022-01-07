@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-project(Editor)
+project(XEditor)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -13,7 +13,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GN
     set(CMAKE_CXX_FLAGS_RELEASE -O3)
 endif ()
 
-add_compile_definitions(MANA_EXPORT=)
+add_compile_definitions(XENGINE_EXPORT=)
 
 include(cmake/config.cmake)
-include(cmake/editor.cmake)
+include(cmake/xeditor.cmake)

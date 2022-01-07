@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MANA_PROJECTCOMPILER_HPP
-#define MANA_PROJECTCOMPILER_HPP
+#ifndef XEDITOR_PROJECTCOMPILER_HPP
+#define XEDITOR_PROJECTCOMPILER_HPP
 
 #include <string>
 
@@ -36,4 +36,4 @@ private:
     BuildSettings buildSettings;
 };
 
-#endif //MANA_PROJECTCOMPILER_HPP
+#endif //XEDITOR_PROJECTCOMPILER_HPP

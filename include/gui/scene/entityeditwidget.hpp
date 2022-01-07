@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MANA_ENTITYEDITWIDGET_HPP
-#define MANA_ENTITYEDITWIDGET_HPP
+#ifndef XEDITOR_ENTITYEDITWIDGET_HPP
+#define XEDITOR_ENTITYEDITWIDGET_HPP
 
 #include <QWidget>
 
@@ -44,4 +44,4 @@ private:
     xengine::ComponentManager *componentManager = nullptr;
 };
 
-#endif //MANA_ENTITYEDITWIDGET_HPP
+#endif //XEDITOR_ENTITYEDITWIDGET_HPP

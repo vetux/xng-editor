@@ -101,7 +101,7 @@ void MainWindow::onTimeout() {
 
 void MainWindow::loadStateFile() {
     try {
-        std::ifstream fs("mana_editor_state.json");
+        std::ifstream fs("xeditor_state.json");
         if (fs.good()) {
             JsonProtocol jsonProtocol;
             auto msg = jsonProtocol.deserialize(fs);

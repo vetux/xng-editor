@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MANA_BUILDPLATFORM_HPP
-#define MANA_BUILDPLATFORM_HPP
+#ifndef XEDITOR_BUILDPLATFORM_HPP
+#define XEDITOR_BUILDPLATFORM_HPP
 
 enum BuildPlatform {
     WIN32_86,
@@ -27,4 +27,4 @@ enum BuildPlatform {
     LINUX_64
 };
 
-#endif //MANA_BUILDPLATFORM_HPP
+#endif //XEDITOR_BUILDPLATFORM_HPP

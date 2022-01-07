@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MANA_COMPONENTDESCRIPTION_HPP
-#define MANA_COMPONENTDESCRIPTION_HPP
+#ifndef XEDITOR_COMPONENTDESCRIPTION_HPP
+#define XEDITOR_COMPONENTDESCRIPTION_HPP
 
 struct ComponentDescription {
     std::string sourceFile; // The header file which contains the source code of the component definition.
@@ -26,4 +26,4 @@ struct ComponentDescription {
     std::string iField; // Describe members by name and type
 };
 
-#endif //MANA_COMPONENTDESCRIPTION_HPP
+#endif //XEDITOR_COMPONENTDESCRIPTION_HPP

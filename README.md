@@ -1,4 +1,4 @@
-# Editor
+# XEditor
 Editor and tools for creating games.
 
 # Building
