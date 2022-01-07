@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-project(Mana)
+project(Editor)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
