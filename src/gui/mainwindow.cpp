@@ -26,7 +26,7 @@
 
 #include "engine.hpp"
 
-#include "base64.hpp"
+#include "extern/base64.hpp"
 
 using namespace engine;
 
@@ -39,8 +39,7 @@ MainWindow::MainWindow() {
 
     rootLayout = new QHBoxLayout();
 
-    archive = std::make_unique<PakArchive>(
-            std::make_unique<std::ifstream>(std::filesystem::current_path().string() + "/assets.pak"));
+    archive = std::make_unique<DirectoryArchive>(std::filesystem::current_path().string());
     assetManager = std::make_unique<AssetManager>(*archive);
 
     renderWidget = new RenderWidgetQt(this, *assetManager);
