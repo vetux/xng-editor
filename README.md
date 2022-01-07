@@ -2,7 +2,7 @@
 Editor and tools for creating games.
 
 # Building
-- Clone and build the [engine](https://github.com/xenotux/engine)
+- Clone and build the [engine](https://github.com/xenotux/xengine)
 - Either :
     - Copy the include directory of the engine to the lib/include directory and the built engine library to lib/bin
     - Add the path of the engine include directory to the include path by editing [config.cmake](cmake/config.cmake)
