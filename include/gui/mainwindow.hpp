@@ -27,7 +27,7 @@
 #include <QTimer>
 #include <QTabWidget>
 
-#include "engine.hpp"
+#include "xengine.hpp"
 
 #include "gui/scene/sceneeditwidget.hpp"
 #include "gui/scene/entityeditwidget.hpp"
@@ -67,18 +67,18 @@ private:
     QSplitter *leftSplitter;
     QSplitter *rightSplitter;
 
-    engine::RenderWidgetQt *renderWidget;
+    xengine::RenderWidgetQt *renderWidget;
     SceneEditWidget *sceneEditWidget;
     FileBrowser *fileBrowser;
 
     QTabWidget *tabWidget;
 
-    engine::EntityManager entityManager;
-    engine::Scene renderScene;
+    xengine::EntityManager entityManager;
+    xengine::Scene renderScene;
 
-    std::unique_ptr<engine::Archive> archive;
-    std::unique_ptr<engine::AssetManager> assetManager;
-    std::unique_ptr<engine::AssetRenderManager> assetRenderManager;
+    std::unique_ptr<xengine::Archive> archive;
+    std::unique_ptr<xengine::AssetManager> assetManager;
+    std::unique_ptr<xengine::AssetRenderManager> assetRenderManager;
 
     QTimer timer;
 };

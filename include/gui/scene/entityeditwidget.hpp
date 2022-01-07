@@ -31,17 +31,17 @@ public:
     explicit EntityEditWidget(QWidget *parent)
             : QWidget(parent) {}
 
-    void setEntity(engine::Entity value) {
+    void setEntity(xengine::Entity value) {
         entity = value;
     }
 
-    void setComponentManager(engine::ComponentManager *value) {
+    void setComponentManager(xengine::ComponentManager *value) {
         componentManager = value;
     }
 
 private:
-    engine::Entity entity;
-    engine::ComponentManager *componentManager = nullptr;
+    xengine::Entity entity;
+    xengine::ComponentManager *componentManager = nullptr;
 };
 
 #endif //MANA_ENTITYEDITWIDGET_HPP

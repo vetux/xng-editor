@@ -24,11 +24,11 @@
 #include <QMenuBar>
 #include <QSizePolicy>
 
-#include "engine.hpp"
+#include "xengine.hpp"
 
 #include "extern/base64.hpp"
 
-using namespace engine;
+using namespace xengine;
 
 MainWindow::MainWindow() {
     menuBar()->addMenu("File");

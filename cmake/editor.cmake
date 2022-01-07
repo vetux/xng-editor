@@ -17,7 +17,7 @@ else ()
 endif ()
 
 target_include_directories(editor PUBLIC ${Engine.Dir.INCLUDE} ${Editor.Dir.INCLUDE} ${Editor.Dir.SRC} ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(editor engine Qt5::Core Qt5::Widgets)
+target_link_libraries(editor xengine Qt5::Core Qt5::Widgets)
 
 set(Assets submodules/assets)
 file(COPY ${Assets} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
