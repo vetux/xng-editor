@@ -16,7 +16,7 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
- 
+
 #include "gui/mainwindow.hpp"
 
 #include <QVBoxLayout>
@@ -30,6 +30,15 @@
 
 using namespace xengine;
 
+class PassAllocator : public RenderWidgetQt::Allocator {
+public:
+    void addPasses(RenderDevice &device, DeferredRenderer &ren) override {
+        ren.addRenderPass(std::make_unique<SkyboxPass>(device));
+        ren.addRenderPass(std::make_unique<PrePass>(device));
+        ren.addRenderPass(std::make_unique<PhongShadePass>(device));
+    }
+};
+
 MainWindow::MainWindow() {
     menuBar()->addMenu("File");
 
@@ -42,7 +51,8 @@ MainWindow::MainWindow() {
     archive = std::make_unique<DirectoryArchive>(std::filesystem::current_path().string() + "/assets");
     assetManager = std::make_unique<AssetManager>(*archive);
 
-    renderWidget = new RenderWidgetQt(this, *assetManager);
+    auto passAlloc = std::make_unique<PassAllocator>();
+    renderWidget = new RenderWidgetQt(this, *assetManager, std::move(passAlloc));
     sceneEditWidget = new SceneEditWidget(this);
     fileBrowser = new FileBrowser(this);
 
@@ -73,6 +83,8 @@ MainWindow::MainWindow() {
     connect(&timer, SIGNAL(timeout()), this, SLOT(onTimeout()));
 
     renderWidget->setScene(renderScene);
+    renderWidget->setLayers({Compositor::Layer("Skybox", SkyboxPass::COLOR, ""),
+                             Compositor::Layer("Phong", PhongShadePass::COMBINED, "")});
 
     timer.start(1000 / 60);
 
