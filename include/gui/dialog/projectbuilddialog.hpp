@@ -1,5 +1,5 @@
 /**
- *  Mana - 3D Game Engine
+ *  xEditor - Editor and tools for creating games
  *  Copyright (C) 2021  Julian Zampiccoli
  *
  *  This program is free software; you can redistribute it and/or modify
