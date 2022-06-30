@@ -24,20 +24,11 @@
 #include <QMenuBar>
 #include <QSizePolicy>
 
+#include <fstream>
+
 #include "xengine.hpp"
 
-#include "extern/base64.hpp"
-
-using namespace xengine;
-
-class PassAllocator : public RenderWidgetQt::Allocator {
-public:
-    void addPasses(RenderDevice &device, DeferredRenderer &ren) override {
-        ren.addRenderPass(std::make_unique<SkyboxPass>(device));
-        ren.addRenderPass(std::make_unique<PrePass>(device));
-        ren.addRenderPass(std::make_unique<PhongShadePass>(device));
-    }
-};
+using namespace xng;
 
 MainWindow::MainWindow() {
     menuBar()->addMenu("File");
@@ -48,11 +39,6 @@ MainWindow::MainWindow() {
 
     rootLayout = new QHBoxLayout();
 
-    archive = std::make_unique<DirectoryArchive>(std::filesystem::current_path().string() + "/assets");
-    assetManager = std::make_unique<AssetManager>(*archive);
-
-    auto passAlloc = std::make_unique<PassAllocator>();
-    renderWidget = new RenderWidgetQt(this, *assetManager, std::move(passAlloc));
     sceneEditWidget = new SceneEditWidget(this);
     fileBrowser = new FileBrowser(this);
 
@@ -65,7 +51,6 @@ MainWindow::MainWindow() {
     leftSplitter->setOrientation(Qt::Vertical);
     rightSplitter->setOrientation(Qt::Vertical);
 
-    leftSplitter->addWidget(renderWidget);
     leftSplitter->addWidget(tabWidget);
 
     rightSplitter->addWidget(sceneEditWidget);
@@ -78,13 +63,7 @@ MainWindow::MainWindow() {
 
     rootWidget->setLayout(rootLayout);
 
-    renderScene.skybox.texture = {"/textures/skybox_sky.json", ""};
-
     connect(&timer, SIGNAL(timeout()), this, SLOT(onTimeout()));
-
-    renderWidget->setScene(renderScene);
-    renderWidget->setLayers({Compositor::Layer("Skybox", SkyboxPass::COLOR, ""),
-                             Compositor::Layer("Phong", PhongShadePass::COMBINED, "")});
 
     timer.start(1000 / 60);
 
@@ -108,7 +87,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
 }
 
 void MainWindow::onTimeout() {
-    renderWidget->setScene(renderScene);
+
 }
 
 void MainWindow::loadStateFile() {
@@ -119,13 +98,13 @@ void MainWindow::loadStateFile() {
             auto msg = jsonProtocol.deserialize(fs);
 
             std::string dec;
-            base64_decode(msg.at("leftSplitter").getString());
+            dec = msg.at("leftSplitter").getString();
             leftSplitter->restoreState(QByteArray::fromStdString(dec));
-            dec = base64_decode(msg.at("rightSplitter").getString());
+            dec = msg.at("rightSplitter").getString();
             rightSplitter->restoreState(QByteArray::fromStdString(dec));
-            dec = base64_decode(msg.at("middleSplitter").getString());
+            dec = msg.at("middleSplitter").getString();
             middleSplitter->restoreState(QByteArray::fromStdString(dec));
-            dec = base64_decode(msg.at("sceneEditSplitter").getString());
+            dec = msg.at("sceneEditSplitter").getString();
             sceneEditWidget->restoreSplitterState(QByteArray::fromStdString(dec));
         }
     } catch (const std::exception &e) {}
@@ -133,10 +112,10 @@ void MainWindow::loadStateFile() {
 
 void MainWindow::saveStateFile() {
     Message msg((std::map<std::string, Message>()));
-    msg["leftSplitter"] = base64_encode(leftSplitter->saveState().toStdString());
-    msg["rightSplitter"] = base64_encode(rightSplitter->saveState().toStdString());
-    msg["middleSplitter"] = base64_encode(middleSplitter->saveState().toStdString());
-    msg["sceneEditSplitter"] = base64_encode(sceneEditWidget->saveSplitterState().toStdString());
+    msg["leftSplitter"] = leftSplitter->saveState().toStdString();
+    msg["rightSplitter"] = rightSplitter->saveState().toStdString();
+    msg["middleSplitter"] = middleSplitter->saveState().toStdString();
+    msg["sceneEditSplitter"] = sceneEditWidget->saveSplitterState().toStdString();
 
     std::ofstream fs("mana_editor_state.json");
     JsonProtocol jsonProtocol;

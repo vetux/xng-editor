@@ -34,8 +34,6 @@
 #include "gui/tool/filebrowser.hpp"
 #include "gui/dialog/projectbuilddialog.hpp"
 
-#include "compat/renderwidgetqt.hpp"
-
 class MainWindow : public QMainWindow {
 Q_OBJECT
 public:
@@ -69,18 +67,13 @@ private:
     QSplitter *leftSplitter;
     QSplitter *rightSplitter;
 
-    xengine::RenderWidgetQt *renderWidget;
     SceneEditWidget *sceneEditWidget;
     FileBrowser *fileBrowser;
 
     QTabWidget *tabWidget;
 
-    xengine::EntityManager entityManager;
-    xengine::Scene renderScene;
-
-    std::unique_ptr<xengine::Archive> archive;
-    std::unique_ptr<xengine::AssetManager> assetManager;
-    std::unique_ptr<xengine::AssetRenderManager> assetRenderManager;
+    xng::EntityManager entityManager;
+    xng::Scene renderScene;
 
     QTimer timer;
 };

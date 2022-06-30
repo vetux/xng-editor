@@ -31,7 +31,7 @@
 #include "ecs/entitymanager.hpp"
 #include "ecs/components/transformcomponent.hpp"
 
-class SceneEditWidget : public QWidget, xengine::ComponentPool<xengine::TransformComponent>::Listener {
+class SceneEditWidget : public QWidget, xng::ComponentPool<xng::TransformComponent>::Listener {
 Q_OBJECT
 public:
     //TODO: QTreeWidget entities display
@@ -51,14 +51,14 @@ public:
 
     ~SceneEditWidget() override {
         if (entityManager)
-            entityManager->getComponentManager().getPool<xengine::TransformComponent>().removeListener(this);
+            entityManager->getComponentManager().getPool<xng::TransformComponent>().removeListener(this);
     }
 
-    void setEntityManager(xengine::EntityManager &value) {
+    void setEntityManager(xng::EntityManager &value) {
         if (entityManager)
-            entityManager->getComponentManager().getPool<xengine::TransformComponent>().removeListener(this);
+            entityManager->getComponentManager().getPool<xng::TransformComponent>().removeListener(this);
         entityManager = &value;
-        entityManager->getComponentManager().getPool<xengine::TransformComponent>().addListener(this);
+        entityManager->getComponentManager().getPool<xng::TransformComponent>().addListener(this);
     }
 
     QByteArray saveSplitterState() const {
@@ -71,24 +71,24 @@ public:
 
 signals:
 
-    void currentEntityChanged(xengine::Entity entity);
+    void currentEntityChanged(xng::Entity entity);
 
 private:
-    void onComponentCreate(const xengine::Entity &entity, const xengine::TransformComponent &component) override {}
+    void onComponentCreate(const xng::Entity &entity, const xng::TransformComponent &component) override {}
 
-    void onComponentDestroy(const xengine::Entity &entity, const xengine::TransformComponent &component) override {}
+    void onComponentDestroy(const xng::Entity &entity, const xng::TransformComponent &component) override {}
 
-    void onComponentUpdate(const xengine::Entity &entity,
-                           const xengine::TransformComponent &oldValue,
-                           const xengine::TransformComponent &newValue) override {}
+    void onComponentUpdate(const xng::Entity &entity,
+                           const xng::TransformComponent &oldValue,
+                           const xng::TransformComponent &newValue) override {}
 
     QSplitter *splitter;
     QTreeWidget *sceneTree;
     EntityEditWidget *entityEditWidget;
 
-    xengine::EntityManager *entityManager = nullptr;
+    xng::EntityManager *entityManager = nullptr;
 
-    std::map<xengine::Entity, QTreeWidgetItem *> entityItems;
+    std::map<xng::Entity, QTreeWidgetItem *> entityItems;
 };
 
 #endif //XEDITOR_SCENEEDITWIDGET_HPP
