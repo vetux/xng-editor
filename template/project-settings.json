@@ -1,0 +1,12 @@
+{
+  "name": "New Project",
+  "bundles": [
+    {
+      "name": "assets",
+      "directories": [
+        "assets/"
+      ]
+    }
+  ],
+  "buildSettings": []
+}

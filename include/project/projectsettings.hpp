@@ -16,34 +16,20 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#ifndef XEDITOR_PROJECTSETTINGS_HPP
+#define XEDITOR_PROJECTSETTINGS_HPP
 
-#include "compiler/projectcompiler.hpp"
+#include <vector>
+#include <string>
+#include <filesystem>
 
-#include <fstream>
+#include "project/buildsettings.hpp"
+#include "project/assetbundle.hpp"
 
-ProjectCompiler &ProjectCompiler::setSettings(const BuildSettings &settings) {
-    buildSettings = settings;
-    return *this;
-}
+struct ProjectSettings {
+    std::string name; // The name of the project
+    std::vector<AssetBundle> assetBundles{}; // The asset bundles
+    std::vector<BuildSettings> buildSettings; // The user created build settings.
+};
 
-void ProjectCompiler::compile() {
-    // Package assets
-
-    // Copy Packaged assets to output dir
-
-    // Create the CMakeLists.txt file
-    auto cmSrc = getCMakeSource();
-    std::ofstream fs(buildSettings.outputDir + "/CMakeLists.txt");
-    fs << cmSrc;
-    fs.close();
-
-    // Run Cmake
-
-    // Copy outputs from cmake
-
-    // Copy library binaries
-}
-
-std::string ProjectCompiler::getCMakeSource() {
-    throw std::runtime_error("Not Implemented");
-}
+#endif //XEDITOR_PROJECTSETTINGS_HPP

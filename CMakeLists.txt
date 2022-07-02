@@ -17,3 +17,6 @@ add_compile_definitions(XENGINE_EXPORT=)
 
 include(cmake/config.cmake)
 include(cmake/xeditor.cmake)
+
+# Uncomment to enable syntax highlighting
+# include(template/CMakeLists.txt)

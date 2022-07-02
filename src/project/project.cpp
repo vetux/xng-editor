@@ -17,13 +17,38 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef XEDITOR_COMPONENTDESCRIPTION_HPP
-#define XEDITOR_COMPONENTDESCRIPTION_HPP
+#include "project/project.hpp"
 
-struct ComponentDescription {
-    std::string sourceFile; // The header file which contains the source code of the component definition.
-    std::string typeName; // The name of the component type
-    std::string iField; // Describe members by name and type
-};
+#include "asset/scene.hpp"
 
-#endif //XEDITOR_COMPONENTDESCRIPTION_HPP
+void Project::create(const std::filesystem::path &outputDir, const std::filesystem::path &templateDir) {
+
+}
+
+Project::Project(const std::filesystem::path &dir) {
+    // Read and deserialize the settings object
+}
+
+void Project::compile(const BuildSettings &settings) const {
+    // Package asset bundles
+
+    // Copy pak files to output dir
+
+    // Run cmake
+
+    // Copy outputs from cmake to output dir
+
+    // Copy library binaries
+}
+
+void Project::save() const {
+    // Serialize and write settings object.
+}
+
+ProjectSettings &Project::getSettings() {
+    return settings;
+}
+
+const ProjectSettings &Project::getSettings() const {
+    return settings;
+}

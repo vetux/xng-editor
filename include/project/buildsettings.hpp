@@ -20,18 +20,26 @@
 #ifndef XEDITOR_BUILDSETTINGS_HPP
 #define XEDITOR_BUILDSETTINGS_HPP
 
-#include "compiler/buildoptimization.hpp"
-#include "compiler/buildplatform.hpp"
+#include <set>
+#include <filesystem>
+
+#include "project/buildoptimization.hpp"
+#include "project/buildplatform.hpp"
 
 struct BuildSettings {
-    std::string includeDir{}; // User include path
-    std::string sourceDir{}; // User source files
-    std::string assetDir{}; // Assets directory which is packed into dirName.pack
-    std::string linkDir{}; // Directory containing the library binaries (Engine and dependencies) for the target platform.
-    std::string outputDir{}; // The output directory
+    std::string settingsName{};
 
-    BuildPlatform targetPlatform;
+    BuildPlatform targetPlatform{};
     BuildOptimization optimization{};
+
+    std::filesystem::path outputDir{}; // The output directory
+
+    // CMake build configuration definitions
+    std::string targetName{};
+    std::set<std::filesystem::path> srcDirs{};
+    std::set<std::filesystem::path> incDirs{};
+    std::set<std::filesystem::path> lnkDirs{};
+    std::string linkLibraries{};
 };
 
 #endif //XEDITOR_BUILDSETTINGS_HPP

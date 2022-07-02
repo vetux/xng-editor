@@ -24,7 +24,7 @@
 
 #include <QDialog>
 
-#include "compiler/projectcompiler.hpp"
+#include "project/buildsettings.hpp"
 
 class ProjectBuildDialog : public QDialog {
 Q_OBJECT

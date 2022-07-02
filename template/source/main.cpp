@@ -17,23 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef XEDITOR_PROJECTCOMPILER_HPP
-#define XEDITOR_PROJECTCOMPILER_HPP
+#include "game.hpp"
 
-#include <string>
-
-#include "compiler/buildsettings.hpp"
-
-class ProjectCompiler {
-public:
-    ProjectCompiler &setSettings(const BuildSettings &settings);
-
-    void compile();
-
-private:
-    std::string getCMakeSource();
-
-    BuildSettings buildSettings;
-};
-
-#endif //XEDITOR_PROJECTCOMPILER_HPP
+int main(int argc, char *argv[]) {
+    return Game(argc, argv).loop();
+}
