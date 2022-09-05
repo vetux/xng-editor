@@ -92,32 +92,32 @@ void MainWindow::onTimeout() {
 
 void MainWindow::loadStateFile() {
     try {
-        std::ifstream fs("xeditor_state.json");
+        std::ifstream fs("state.json");
         if (fs.good()) {
             JsonProtocol jsonProtocol;
             auto msg = jsonProtocol.deserialize(fs);
 
             std::string dec;
-            dec = msg.at("leftSplitter").getString();
-            leftSplitter->restoreState(QByteArray::fromStdString(dec));
-            dec = msg.at("rightSplitter").getString();
-            rightSplitter->restoreState(QByteArray::fromStdString(dec));
-            dec = msg.at("middleSplitter").getString();
-            middleSplitter->restoreState(QByteArray::fromStdString(dec));
-            dec = msg.at("sceneEditSplitter").getString();
-            sceneEditWidget->restoreSplitterState(QByteArray::fromStdString(dec));
+            dec = msg.at("leftSplitter").asString();
+            leftSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+            dec = msg.at("rightSplitter").asString();
+            rightSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+            dec = msg.at("middleSplitter").asString();
+            middleSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+            dec = msg.at("sceneEditSplitter").asString();
+            sceneEditWidget->restoreSplitterState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
         }
     } catch (const std::exception &e) {}
 }
 
 void MainWindow::saveStateFile() {
-    Message msg((std::map<std::string, Message>()));
-    msg["leftSplitter"] = leftSplitter->saveState().toStdString();
-    msg["rightSplitter"] = rightSplitter->saveState().toStdString();
-    msg["middleSplitter"] = middleSplitter->saveState().toStdString();
-    msg["sceneEditSplitter"] = sceneEditWidget->saveSplitterState().toStdString();
+    Message msg(xng::Message::DICTIONARY);
+    msg["leftSplitter"] = leftSplitter->saveState().toBase64().toStdString();
+    msg["rightSplitter"] = rightSplitter->saveState().toBase64().toStdString();
+    msg["middleSplitter"] = middleSplitter->saveState().toBase64().toStdString();
+    msg["sceneEditSplitter"] = sceneEditWidget->saveSplitterState().toBase64().toStdString();
 
-    std::ofstream fs("mana_editor_state.json");
+    std::ofstream fs("state.json");
     JsonProtocol jsonProtocol;
     jsonProtocol.serialize(fs, msg);
 }

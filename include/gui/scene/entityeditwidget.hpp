@@ -22,7 +22,8 @@
 
 #include <QWidget>
 
-#include "ecs/componentmanager.hpp"
+#include "ecs/componentcontainer.hpp"
+#include "ecs/entity.hpp"
 
 class EntityEditWidget : public QWidget {
 Q_OBJECT
@@ -35,13 +36,13 @@ public:
         entity = value;
     }
 
-    void setComponentManager(xng::ComponentManager *value) {
+    void setComponentManager(xng::ComponentContainer *value) {
         componentManager = value;
     }
 
 private:
     xng::Entity entity;
-    xng::ComponentManager *componentManager = nullptr;
+    xng::ComponentContainer *componentManager = nullptr;
 };
 
 #endif //XEDITOR_ENTITYEDITWIDGET_HPP

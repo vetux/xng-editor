@@ -74,7 +74,7 @@ private:
 
     QTabWidget *tabWidget;
 
-    xng::EntityManager entityManager;
+    xng::EntityScene entityManager;
     xng::Scene renderScene;
 
     QTimer timer;
