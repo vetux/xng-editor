@@ -28,6 +28,8 @@
 
 #include "xengine.hpp"
 
+#include "gui/widgets/entitywidget.hpp"
+
 using namespace xng;
 
 MainWindow::MainWindow() {
@@ -39,7 +41,7 @@ MainWindow::MainWindow() {
 
     rootLayout = new QHBoxLayout();
 
-    sceneEditWidget = new SceneEditWidget(this);
+    sceneEditWidget = new EntitySceneWidget(this);
     fileBrowser = new FileBrowser(this);
 
     middleSplitter = new QSplitter(this);

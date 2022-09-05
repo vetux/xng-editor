@@ -29,8 +29,8 @@
 
 #include "xengine.hpp"
 
-#include "gui/scene/sceneeditwidget.hpp"
-#include "gui/scene/entityeditwidget.hpp"
+#include "widgets/entityscenewidget.hpp"
+#include "widgets/entitywidget.hpp"
 #include "gui/tool/filebrowser.hpp"
 #include "gui/dialog/projectbuilddialog.hpp"
 
@@ -69,7 +69,7 @@ private:
     QSplitter *leftSplitter;
     QSplitter *rightSplitter;
 
-    SceneEditWidget *sceneEditWidget;
+    EntitySceneWidget *sceneEditWidget;
     FileBrowser *fileBrowser;
 
     QTabWidget *tabWidget;

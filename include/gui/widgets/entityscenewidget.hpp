@@ -17,48 +17,51 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef XEDITOR_SCENEEDITWIDGET_HPP
-#define XEDITOR_SCENEEDITWIDGET_HPP
+#ifndef XEDITOR_ENTITYSCENEWIDGET_HPP
+#define XEDITOR_ENTITYSCENEWIDGET_HPP
 
 #include <QWidget>
 #include <QTreeWidget>
 #include <QHBoxLayout>
 #include <QSplitter>
 #include <QHeaderView>
+#include <utility>
 
-#include "gui/scene/entityeditwidget.hpp"
+#include "entitywidget.hpp"
 
 #include "ecs/entityscene.hpp"
 #include "ecs/components/transformcomponent.hpp"
 
-class SceneEditWidget : public QWidget, xng::EntityScene::Listener {
+class EntitySceneWidget : public QWidget, public xng::EntityScene::Listener {
 Q_OBJECT
 public:
     //TODO: QTreeWidget entities display
-    explicit SceneEditWidget(QWidget *parent)
+    explicit EntitySceneWidget(QWidget *parent)
             : QWidget(parent) {
-        auto layout = new QHBoxLayout(this);
-        setLayout(layout);
         splitter = new QSplitter(this);
         sceneTree = new QTreeWidget(this);
-        entityEditWidget = new EntityEditWidget(layout->widget());
+        entityEditWidget = new EntityWidget(this);
+
+        setLayout(new QHBoxLayout);
+
         splitter->addWidget(sceneTree);
         splitter->addWidget(entityEditWidget);
-        layout->addWidget(splitter);
+        layout()->addWidget(splitter);
+
         sceneTree->headerItem()->setHidden(true);
-        layout->setMargin(0);
+        layout()->setMargin(0);
     }
 
-    ~SceneEditWidget() override {
-        if (entityManager)
-            entityManager->removeListener(*this);
+    ~EntitySceneWidget() override {
+        if (scene)
+            scene->removeListener(*this);
     }
 
-    void setEntityManager(xng::EntityScene &value) {
-        if (entityManager)
-            entityManager->removeListener(*this);
-        entityManager = &value;
-        entityManager->addListener(*this);
+    void setScene(std::shared_ptr<xng::EntityScene> value) {
+        if (scene)
+            scene->removeListener(*this);
+        scene = std::move(value);
+        scene->addListener(*this);
     }
 
     QByteArray saveSplitterState() const {
@@ -70,18 +73,18 @@ public:
     }
 
 signals:
+    void entityCreated(const std::string &name);
 
-    void currentEntityChanged(xng::Entity entity);
+    void componentAdded(EntityHandle entity, std::any component, std::type_index componentType);
 
 private:
+    std::shared_ptr<xng::EntityScene> scene = nullptr;
 
     QSplitter *splitter;
     QTreeWidget *sceneTree;
-    EntityEditWidget *entityEditWidget;
-
-    xng::EntityScene *entityManager = nullptr;
+    EntityWidget *entityEditWidget;
 
     std::map<xng::Entity, QTreeWidgetItem *> entityItems;
 };
 
-#endif //XEDITOR_SCENEEDITWIDGET_HPP
+#endif //XEDITOR_ENTITYSCENEWIDGET_HPP

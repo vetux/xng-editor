@@ -16,33 +16,7 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#ifndef XEDITOR_CANVASCOMPONENTWIDGET_HPP
+#define XEDITOR_CANVASCOMPONENTWIDGET_HPP
 
-#ifndef XEDITOR_ENTITYEDITWIDGET_HPP
-#define XEDITOR_ENTITYEDITWIDGET_HPP
-
-#include <QWidget>
-
-#include "ecs/componentcontainer.hpp"
-#include "ecs/entity.hpp"
-
-class EntityEditWidget : public QWidget {
-Q_OBJECT
-public:
-    //TODO: Components Display / Edit
-    explicit EntityEditWidget(QWidget *parent)
-            : QWidget(parent) {}
-
-    void setEntity(xng::Entity value) {
-        entity = value;
-    }
-
-    void setComponentManager(xng::ComponentContainer *value) {
-        componentManager = value;
-    }
-
-private:
-    xng::Entity entity;
-    xng::ComponentContainer *componentManager = nullptr;
-};
-
-#endif //XEDITOR_ENTITYEDITWIDGET_HPP
+#endif //XEDITOR_CANVASCOMPONENTWIDGET_HPP
