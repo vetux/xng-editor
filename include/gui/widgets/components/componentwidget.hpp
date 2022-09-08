@@ -19,28 +19,45 @@
 #ifndef XEDITOR_COMPONENTWIDGET_HPP
 #define XEDITOR_COMPONENTWIDGET_HPP
 
+#include <QFrame>
 #include <QLabel>
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QPushButton>
 
 #include "xengine.hpp"
 
 using namespace xng;
 
-class ComponentWidget : public QWidget {
+class ComponentWidget : public QFrame {
 Q_OBJECT
 public:
-    ComponentWidget(QWidget *parent = nullptr) : QWidget(parent) {
+    ComponentWidget(QWidget *parent = nullptr) : QFrame(parent) {
+        setFrameShape(StyledPanel);
+        setFrameShadow(Raised);
+
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
         header = new QWidget(this);
         headerText = new QLabel(this);
         headerCheckBox = new QCheckBox(this);
-        header->setLayout(new QHBoxLayout);
-        header->layout()->addWidget(headerText);
+        headerDestroyButton = new QPushButton(this);
+
+        headerDestroyButton->setText("Destroy");
+
+        auto *lay = new QHBoxLayout;
+        header->setLayout(lay);
+        lay->addWidget(headerText, 1);
+        header->layout()->addWidget(headerDestroyButton);
         header->layout()->addWidget(headerCheckBox);
+
         setLayout(new QVBoxLayout);
+
         layout()->addWidget(header);
-        connect(headerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(stateChanged));
+
+        connect(headerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(stateChanged(int)));
+        connect(headerDestroyButton, SIGNAL(pressed()), this, SIGNAL(destroyPressed()));
     }
 
     virtual void setTitle(const QString &title) {
@@ -55,19 +72,27 @@ public:
         return headerCheckBox->checkState() == Qt::Checked;
     }
 
+    virtual std::type_index getType() {
+        return typeid(ComponentWidget);
+    }
+
 signals:
 
     void checkedChanged(bool enabled);
 
-private slots:
+    void destroyPressed();
+
+protected slots:
 
     void stateChanged(int state) {
         emit checkedChanged(state == Qt::Checked);
     };
-private:
+
+protected:
     QWidget *header;
     QLabel *headerText;
     QCheckBox *headerCheckBox;
+    QPushButton *headerDestroyButton;
 };
 
 

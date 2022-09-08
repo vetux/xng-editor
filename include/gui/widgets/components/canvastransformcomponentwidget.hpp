@@ -75,6 +75,8 @@ class CanvasTransformComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
     CanvasTransformComponentWidget(QWidget *parent = nullptr) : ComponentWidget(parent) {
+        headerText->setText("Canvas Transform");
+
         anchorLabel = new QLabel(this);
         anchorWidget = new AnchorWidget(this);
         canvasLabel = new QLabel(this);
@@ -104,8 +106,10 @@ public:
         layout()->addWidget(rotationLabel);
         layout()->addWidget(rotationWidget);
 
-        connect(anchorLabel, SIGNAL(valueChanged(CanvasTransformComponent::Anchor anchor)), this,
-                SLOT(valueChanged(CanvasTransformComponent::Anchor anchor)));
+        connect(anchorWidget,
+                SIGNAL(valueChanged(CanvasTransformComponent::Anchor)),
+                this,
+                SLOT(valueChanged(CanvasTransformComponent::Anchor)));
         connect(canvasWidget, SIGNAL(textEdited(const QString &)), this, SLOT(textEdited(const QString &)));
         connect(rectangleWidget, SIGNAL(valueChanged(const Rectf &)), this, SLOT(valueChanged(const Rectf &)));
         connect(centerWidget, SIGNAL(valueChanged(const Vec2f &)), this, SLOT(valueChanged(const Vec2f &)));
@@ -123,6 +127,10 @@ public:
 
     const CanvasTransformComponent &get() const {
         return transform;
+    }
+
+    virtual std::type_index getType() override {
+        return typeid(CanvasTransformComponentWidget);
     }
 
 signals:

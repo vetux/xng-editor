@@ -22,6 +22,7 @@
 
 #include <QWidget>
 #include <QPushButton>
+#include <QScrollArea>
 
 #include "ecs/entity.hpp"
 
@@ -38,8 +39,12 @@ Q_OBJECT
 public:
     explicit EntityWidget(QWidget *parent)
             : QWidget(parent) {
+        setEnabled(false);
         setLayout(new QVBoxLayout);
-        auto * widget = new QWidget(this);
+
+        spacerWidget = new QWidget(this);
+
+        auto *widget = new QWidget(this);
         widget->setLayout(new QHBoxLayout);
 
         auto *label = new QLabel(this);
@@ -47,38 +52,114 @@ public:
 
         headerText = new QLineEdit(this);
 
+        destroyEntityButton = new QPushButton(this);
+        destroyEntityButton->setText("Destroy");
+
         widget->layout()->addWidget(label);
         widget->layout()->addWidget(headerText);
+        widget->layout()->addWidget(destroyEntityButton);
+
+        componentParent = new QWidget();
+        componentScroll = new QScrollArea(this);
+        componentScroll->setFrameShape(QFrame::NoFrame);
+        componentScroll->setWidget(componentParent);
+        componentScroll->setWidgetResizable(true);
+
+        addComponentContainer = new QWidget();
+
+        addComponentButton = new QPushButton();
+        addComponentButton->setText("Add Component");
+
+        auto *addCompLayout = new QHBoxLayout;
+
+        addCompLayout->addWidget(new QWidget, 1);
+        addCompLayout->addWidget(addComponentButton, 1);
+        addCompLayout->addWidget(new QWidget, 1);
+
+        addComponentContainer->setLayout(addCompLayout);
+
+        auto *compLayout = new QVBoxLayout;
+        compLayout->setSpacing(0);
+
+        compLayout->addWidget(addComponentContainer);
+        compLayout->addWidget(spacerWidget, 1);
+
+        componentParent->setLayout(compLayout);
 
         layout()->addWidget(widget);
-
-        addComponentButton = new QPushButton(this);
-        widget = new QWidget(this);
-        widget->setLayout(new QHBoxLayout);
-        widget->layout()->addWidget(addComponentButton);
-
-        layout()->addWidget(addComponentButton);
-        connect(addComponentButton, SIGNAL(pressed()), this, SIGNAL(addComponent()));
+        layout()->addWidget(componentScroll);
 
         layout()->setAlignment(Qt::AlignTop);
 
-        addComponentButton->setText("Add Component");
-    }
+        connect(destroyEntityButton, SIGNAL(pressed()), this, SLOT(destroyEntityPressed()));
+        connect(addComponentButton, SIGNAL(pressed()), this, SIGNAL(addComponent()));
+ }
 
     void setEntity(xng::Entity value) {
+        setEnabled(true);
+
         entity = value;
         for (auto &pair: components) {
+            layout()->removeWidget(pair.second);
             pair.second->deleteLater();
         }
         components.clear();
 
+        componentParent->layout()->removeWidget(spacerWidget);
+        componentParent->layout()->removeWidget(addComponentContainer);
+
+        if (value.hasName())
+            headerText->setText(value.getName().c_str());
+
+        if (entity.checkComponent<AudioSourceComponent>()) {
+            auto *widget = new ComponentWidget(this);
+            widget->setTitle("Audio Source");
+            addComponentWidget(widget);
+            components[typeid(AudioSourceComponent)] = widget;
+        }
+
         if (entity.checkComponent<TransformComponent>()) {
             auto *widget = new TransformComponentWidget(this);
+            widget->set(value.getComponent<TransformComponent>());
+            connect(widget,
+                    SIGNAL(destroyPressed()),
+                    this,
+                    SLOT(destroyPressed()));
             connect(widget, SIGNAL(valueChanged(const TransformComponent &)), this,
                     SLOT(valueChanged(const TransformComponent &)));
-            auto *lay = (QVBoxLayout*)layout();
-            lay->insertWidget(lay->count() - 1, widget);
+            addComponentWidget(widget);
+            components[typeid(TransformComponent)] = widget;
         }
+
+        if (entity.checkComponent<CanvasTransformComponent>()) {
+            auto *widget = new CanvasTransformComponentWidget(this);
+            widget->set(value.getComponent<CanvasTransformComponent>());
+            connect(widget,
+                    SIGNAL(destroyPressed()),
+                    this,
+                    SLOT(destroyPressed()));
+            connect(widget, SIGNAL(valueChanged(const CanvasTransformComponent &)), this,
+                    SLOT(valueChanged(const CanvasTransformComponent &)));
+            addComponentWidget(widget);
+            components[typeid(CanvasTransformComponent)] = widget;
+        }
+
+        componentParent->layout()->addWidget(addComponentContainer);
+
+        auto *lay = (QVBoxLayout *) componentParent->layout();
+        lay->addWidget(spacerWidget, 1);
+
+        componentScroll->update();
+    }
+
+    void clearEntity() {
+        entity = {};
+        for (auto &pair: components) {
+            layout()->removeWidget(pair.second);
+            pair.second->deleteLater();
+        }
+        components.clear();
+        setEnabled(false);
     }
 
     const Entity &getEntity() const {
@@ -86,49 +167,84 @@ public:
     }
 
 signals:
+
     void addComponent();
 
-    void componentChanged(std::any component, std::type_index componentType);
+    void updateComponent(const std::any &component, std::type_index componentType);
 
-    void nameChanged(const std::string &name);
+    void destroyComponent(std::type_index componentType);
+
+    void updateEntityName(const std::string &name);
+
+    void destroyEntity();
 
 private slots:
+
+    void destroyEntityPressed() {
+        emit destroyEntity();
+    }
+
+    void destroyPressed() {
+        auto *sen = dynamic_cast<ComponentWidget *>(sender());
+        auto type = sen->getType();
+        if (type == typeid(ComponentWidget)) {
+            // User defined component type
+        } else if (type == typeid(TransformComponentWidget)) {
+            emit destroyComponent(typeid(TransformComponent));
+        } else if (type == typeid(CanvasTransformComponentWidget)) {
+            emit destroyComponent(typeid(CanvasTransformComponent));
+        }
+    }
+
     void valueChanged(const AudioSourceComponent &value) {
-        emit componentChanged(value, typeid(AudioSourceComponent));
+        emit updateComponent(value, typeid(AudioSourceComponent));
     }
 
     void valueChanged(const CanvasComponent &value) {
-        emit componentChanged(value, typeid(CanvasComponent));
+        emit updateComponent(value, typeid(CanvasComponent));
     }
 
     void valueChanged(const CanvasTransformComponent &value) {
-        emit componentChanged(value, typeid(CanvasTransformComponent));
+        emit updateComponent(value, typeid(CanvasTransformComponent));
     }
 
     void valueChanged(const RigidBodyComponent &value) {
-        emit componentChanged(value, typeid(RigidBodyComponent));
+        emit updateComponent(value, typeid(RigidBodyComponent));
     }
 
     void valueChanged(const SpriteAnimationComponent &value) {
-        emit componentChanged(value, typeid(SpriteAnimationComponent));
+        emit updateComponent(value, typeid(SpriteAnimationComponent));
     }
 
     void valueChanged(const SpriteComponent &value) {
-        emit componentChanged(value, typeid(SpriteComponent));
+        emit updateComponent(value, typeid(SpriteComponent));
     }
 
     void valueChanged(const TransformComponent &value) {
-        emit componentChanged(value, typeid(TransformComponent));
+        emit updateComponent(value, typeid(TransformComponent));
     }
 
 private:
+    void addComponentWidget(ComponentWidget *widget) {
+        componentParent->layout()->addWidget(widget);
+    }
+
     xng::Entity entity;
 
     QLineEdit *headerText;
 
     std::map<std::type_index, ComponentWidget *> components;
 
+    QWidget *addComponentContainer;
     QPushButton *addComponentButton;
+
+    QScrollArea *componentScroll;
+
+    QWidget *componentParent;
+
+    QWidget *spacerWidget;
+
+    QPushButton *destroyEntityButton;
 };
 
 #endif //XEDITOR_ENTITYWIDGET_HPP

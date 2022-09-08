@@ -16,37 +16,7 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#ifndef XEDITOR_TEXTCOMPONENTWIDGET_HPP
+#define XEDITOR_TEXTCOMPONENTWIDGET_HPP
 
-#ifndef XEDITOR_FILEBROWSER_HPP
-#define XEDITOR_FILEBROWSER_HPP
-
-#include <QWidget>
-#include <QListWidget>
-#include <QVBoxLayout>
-
-class FileBrowserWidget : public QWidget {
-Q_OBJECT
-public:
-    //TODO: ListWidget file display, Drag and Drop, Context menu
-    explicit FileBrowserWidget(QWidget *parent)
-            : QWidget(parent) {
-        setLayout(new QVBoxLayout());
-        listWidget = new QListWidget(this);
-        layout()->addWidget(listWidget);
-        layout()->setMargin(0);
-    }
-
-    void setCurrentPath(const std::string &value) {
-        currentPath = value;
-    }
-
-    const std::string &getCurrentPath() {
-        return currentPath;
-    }
-
-private:
-    std::string currentPath;
-    QListWidget *listWidget;
-};
-
-#endif //XEDITOR_FILEBROWSER_HPP
+#endif //XEDITOR_TEXTCOMPONENTWIDGET_HPP

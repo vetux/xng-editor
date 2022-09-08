@@ -49,7 +49,7 @@ public:
         auto *line = new QWidget(this);
         line->setLayout(new QHBoxLayout);
         line->layout()->addWidget(positionLabel);
-        line->layout()->addWidget(positionLabel);
+        line->layout()->addWidget(positionWidget);
 
         layout()->addWidget(line);
 
@@ -92,11 +92,11 @@ private slots:
     void valueChanged(const Vec3f &value) {
         auto *sen = sender();
         if (sen == positionWidget) {
-            transform.setRotation(Quaternion(value.convert<float>()));
+            transform.setPosition(value);
         } else if (sen == rotationWidget) {
-            transform.setPosition(value.convert<float>());
+            transform.setRotation(Quaternion(value));
         } else {
-            transform.setScale(value.convert<float>());
+            transform.setScale(value);
         }
         emit valueChanged(transform);
     };

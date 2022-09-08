@@ -23,6 +23,7 @@
 #include <QKeyEvent>
 #include <QMenuBar>
 #include <QSizePolicy>
+#include <QMessageBox>
 
 #include <fstream>
 
@@ -33,6 +34,8 @@
 using namespace xng;
 
 MainWindow::MainWindow() {
+    scene = std::make_shared<EntityScene>();
+
     menuBar()->addMenu("File");
 
     rootWidget = new QWidget(this);
@@ -42,7 +45,7 @@ MainWindow::MainWindow() {
     rootLayout = new QHBoxLayout();
 
     sceneEditWidget = new EntitySceneWidget(this);
-    fileBrowser = new FileBrowser(this);
+    fileBrowserWidget = new FileBrowserWidget(this);
 
     middleSplitter = new QSplitter(this);
     leftSplitter = new QSplitter(this);
@@ -56,7 +59,7 @@ MainWindow::MainWindow() {
     leftSplitter->addWidget(tabWidget);
 
     rightSplitter->addWidget(sceneEditWidget);
-    rightSplitter->addWidget(fileBrowser);
+    rightSplitter->addWidget(fileBrowserWidget);
 
     middleSplitter->addWidget(leftSplitter);
     middleSplitter->addWidget(rightSplitter);
@@ -70,6 +73,29 @@ MainWindow::MainWindow() {
     timer.start(1000 / 60);
 
     loadStateFile();
+
+    sceneEditWidget->setScene(scene);
+
+    connect(sceneEditWidget,
+            SIGNAL(createEntity(const std::string &)),
+            this,
+            SLOT(createEntity(const std::string &)));
+    connect(sceneEditWidget,
+            SIGNAL(setEntityName(EntityHandle, const std::string &)),
+            this,
+            SLOT(setEntityName(EntityHandle, const std::string &)));
+    connect(sceneEditWidget,
+            SIGNAL(createComponent(EntityHandle, std::type_index)),
+            this,
+            SLOT(createComponent(EntityHandle, std::type_index)));
+    connect(sceneEditWidget,
+            SIGNAL(updateComponent(EntityHandle, const std::any &, std::type_index)),
+            this,
+            SLOT(updateComponent(EntityHandle, const std::any &, std::type_index)));
+    connect(sceneEditWidget,
+            SIGNAL(destroyComponent(EntityHandle, std::type_index)),
+            this,
+            SLOT(destroyComponent(EntityHandle, std::type_index)));
 }
 
 MainWindow::~MainWindow() {
@@ -90,6 +116,48 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
 
 void MainWindow::onTimeout() {
 
+}
+
+void MainWindow::createEntity(const std::string &name) {
+    if (scene->entityNameExists(name)) {
+        QMessageBox::warning(this, "Cannot Create Entity", ("Entity with name " + name + " already exists").c_str());
+    }
+    scene->createEntity(name);
+}
+
+void MainWindow::setEntityName(Entity entity, const std::string &name) {
+    if (scene->entityNameExists(name)) {
+        QMessageBox::warning(this, "Cannot Set Entity Name", ("Entity with name " + name + " already exists").c_str());
+    }
+    scene->setEntityName(entity.getHandle(), name);
+}
+
+void MainWindow::createComponent(Entity entity, std::type_index componentType) {
+    if (componentType == typeid(TransformComponent)) {
+        if (scene->check<TransformComponent>(entity.getHandle())) {
+            QMessageBox::warning(this, "Cannot Create Component", ("TransformComponent already exists on " + entity.toString()).c_str());
+        } else {
+            scene->createComponent(entity, TransformComponent());
+        }
+    } else if (componentType == typeid(CanvasTransformComponent)) {
+        scene->createComponent(entity, CanvasTransformComponent());
+    }
+}
+
+void MainWindow::updateComponent(Entity entity, const std::any &value, std::type_index type) {
+    if (type == typeid(TransformComponent)) {
+        scene->updateComponent(entity, std::any_cast<TransformComponent>(value));
+    } else if (type == typeid(CanvasTransformComponent)) {
+        scene->updateComponent(entity, std::any_cast<CanvasTransformComponent>(value));
+    }
+}
+
+void MainWindow::destroyComponent(Entity entity, std::type_index type) {
+    if (type == typeid(TransformComponent)) {
+        scene->destroyComponent<TransformComponent>(entity);
+    } else if (type == typeid(CanvasTransformComponent)) {
+        scene->destroyComponent<CanvasTransformComponent>(entity);
+    }
 }
 
 void MainWindow::loadStateFile() {

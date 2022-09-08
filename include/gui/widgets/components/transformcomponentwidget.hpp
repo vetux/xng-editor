@@ -38,7 +38,9 @@ public:
         transformLabel = new QLabel(this);
         transformWidget = new TransformWidget(this);
 
-        parentLabel->setText("Paren:");
+        headerText->setText("Transform");
+
+        parentLabel->setText("Parent:");
         transformLabel->setText("Transform:");
 
         layout()->addWidget(parentLabel);
@@ -58,6 +60,10 @@ public:
 
     const TransformComponent &get() const {
         return transform;
+    }
+
+    virtual std::type_index getType() override {
+        return typeid(TransformComponentWidget);
     }
 
 signals:

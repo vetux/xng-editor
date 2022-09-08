@@ -47,6 +47,16 @@ protected slots:
 
     void onTimeout();
 
+    void createEntity(const std::string &name);
+
+    void setEntityName(Entity entity, const std::string &name);
+
+    void createComponent(Entity entity, std::type_index componentType);
+
+    void updateComponent(Entity entity, const std::any &value, std::type_index type);
+
+    void destroyComponent(Entity entity, std::type_index type);
+
 private:
     void keyPressEvent(QKeyEvent *event) override;
 
@@ -70,12 +80,11 @@ private:
     QSplitter *rightSplitter;
 
     EntitySceneWidget *sceneEditWidget;
-    FileBrowser *fileBrowser;
+    FileBrowserWidget *fileBrowserWidget;
 
     QTabWidget *tabWidget;
 
-    xng::EntityScene entityManager;
-    xng::Scene renderScene;
+    std::shared_ptr<xng::EntityScene> scene;
 
     QTimer timer;
 };
