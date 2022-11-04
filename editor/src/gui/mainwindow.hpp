@@ -29,8 +29,9 @@
 
 #include "xengine.hpp"
 
-#include "widgets/entityscenewidget.hpp"
-#include "widgets/entitywidget.hpp"
+#include "gui/widgets/scenerenderwidget.hpp"
+#include "gui/widgets/sceneeditwidget.hpp"
+#include "gui/widgets/entitywidget.hpp"
 #include "gui/tool/filebrowser.hpp"
 #include "gui/dialog/projectbuilddialog.hpp"
 
@@ -53,7 +54,7 @@ protected slots:
 
     void createComponent(Entity entity, std::type_index componentType);
 
-    void updateComponent(Entity entity, const std::any &value, std::type_index type);
+    void updateComponent(Entity entity, const Component &value);
 
     void destroyComponent(Entity entity, std::type_index type);
 
@@ -79,7 +80,8 @@ private:
     QSplitter *leftSplitter;
     QSplitter *rightSplitter;
 
-    EntitySceneWidget *sceneEditWidget;
+    SceneRenderWidget *sceneRenderWidget;
+    SceneEditWidget *sceneEditWidget;
     FileBrowserWidget *fileBrowserWidget;
 
     QTabWidget *tabWidget;

@@ -47,15 +47,11 @@ public:
         auto *widget = new QWidget(this);
         widget->setLayout(new QHBoxLayout);
 
-        auto *label = new QLabel(this);
-        label->setText("Entity Name:");
-
         headerText = new QLineEdit(this);
 
         destroyEntityButton = new QPushButton(this);
         destroyEntityButton->setText("Destroy");
 
-        widget->layout()->addWidget(label);
         widget->layout()->addWidget(headerText);
         widget->layout()->addWidget(destroyEntityButton);
 
@@ -170,7 +166,7 @@ signals:
 
     void addComponent();
 
-    void updateComponent(const std::any &component, std::type_index componentType);
+    void updateComponent(const Component &component);
 
     void destroyComponent(std::type_index componentType);
 
@@ -197,31 +193,31 @@ private slots:
     }
 
     void valueChanged(const AudioSourceComponent &value) {
-        emit updateComponent(value, typeid(AudioSourceComponent));
+        emit updateComponent(value);
     }
 
     void valueChanged(const CanvasComponent &value) {
-        emit updateComponent(value, typeid(CanvasComponent));
+        emit updateComponent(value);
     }
 
     void valueChanged(const CanvasTransformComponent &value) {
-        emit updateComponent(value, typeid(CanvasTransformComponent));
+        emit updateComponent(value);
     }
 
     void valueChanged(const RigidBodyComponent &value) {
-        emit updateComponent(value, typeid(RigidBodyComponent));
+        emit updateComponent(value);
     }
 
     void valueChanged(const SpriteAnimationComponent &value) {
-        emit updateComponent(value, typeid(SpriteAnimationComponent));
+        emit updateComponent(value);
     }
 
     void valueChanged(const SpriteComponent &value) {
-        emit updateComponent(value, typeid(SpriteComponent));
+        emit updateComponent(value);
     }
 
     void valueChanged(const TransformComponent &value) {
-        emit updateComponent(value, typeid(TransformComponent));
+        emit updateComponent(value);
     }
 
 private:

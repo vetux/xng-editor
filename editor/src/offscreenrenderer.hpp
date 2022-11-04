@@ -29,22 +29,23 @@ namespace xng {
     /**
      * Starts a separate thread, creates a invisible window and runs a ECS with render systems.
      * Results can be retrieved by calling getFrame.
-     * Specifically for use in the editor.
      */
     class OffscreenRenderer {
     public:
         explicit OffscreenRenderer(float frameRate,
-                                   Vec2i frameSize,
-                                   DisplayDriver &displayDriver,
-                                   FontDriver &fontDriver,
-                                   SPIRVCompiler &shaderCompiler,
-                                   SPIRVDecompiler &shaderDecompiler)
-                : frameRate(frameRate), frameSize(std::move(frameSize)) {
-            thread = std::thread([this, &displayDriver, &fontDriver, &shaderCompiler, &shaderDecompiler]() {
-                window = displayDriver.createWindow("opengl",
-                                                    "Render Window",
-                                                    {1, 1},
-                                                    {.visible = false});
+                                   Vec2i frameSize)
+                : frameRate(frameRate),
+                  frameSize(std::move(frameSize)),
+                  displayDriver(DriverRegistry::load<DisplayDriver>("glfw")),
+                  gpuDriver(DriverRegistry::load<GpuDriver>("opengl")),
+                  shaderCompiler(DriverRegistry::load<SPIRVCompiler>("shaderc")),
+                  shaderDecompiler(DriverRegistry::load<SPIRVDecompiler>("spirv-cross")),
+                  fontDriver(DriverRegistry::load<FontDriver>("freetype")) {
+            thread = std::thread([this]() {
+                window = displayDriver->createWindow("opengl",
+                                                     "Render Window",
+                                                     {1, 1},
+                                                     {.visible = false});
                 gpu = DriverRegistry::load<GpuDriver>("opengl");
                 device = gpu->createRenderDevice();
                 target = device->createRenderTarget(RenderTargetDesc{.size = this->frameSize,
@@ -56,16 +57,18 @@ namespace xng {
                 texture = device->createTextureBuffer(desc);
                 target->setColorAttachments({*texture});
 
-                ren2d = std::make_unique<Renderer2D>(*device, shaderCompiler, shaderDecompiler);
+                ren2d = std::make_unique<Renderer2D>(*device, *shaderCompiler, *shaderDecompiler);
 
-                frameGraphRenderer = std::make_unique<FrameGraphRenderer>(
-                        std::make_unique<FrameGraphPoolAllocator>(*device,
-                                                                  shaderCompiler,
-                                                                  shaderDecompiler));
+                frameGraphRenderer = std::make_unique<FrameGraphRenderer>(*target,
+                                                                          std::make_unique<FrameGraphPoolAllocator>(
+                                                                                  *device,
+                                                                                  *shaderCompiler,
+                                                                                  *shaderDecompiler));
 
-                canvasRenderSystem = std::make_unique<CanvasRenderSystem>(*ren2d, *target, fontDriver);
-                meshRenderSystem = std::make_unique<MeshRenderSystem>(*target, *frameGraphRenderer);
+                canvasRenderSystem = std::make_unique<CanvasRenderSystem>(*ren2d, *target, *fontDriver);
+                meshRenderSystem = std::make_unique<MeshRenderSystem>(*frameGraphRenderer);
                 ecs.setSystems({*canvasRenderSystem, *meshRenderSystem});
+                ecs.setScene(std::make_shared<EntityScene>());
                 ecs.start();
                 loop();
                 ecs.stop();
@@ -119,6 +122,7 @@ namespace xng {
             DeltaTime deltaTime = 0;
             while (!shutdown) {
                 try {
+                    ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
                     std::lock_guard<std::mutex> guard(mutex);
                     if (layoutChanged) {
                         frameGraphRenderer->setLayout(layout);
@@ -172,6 +176,13 @@ namespace xng {
 
         std::shared_ptr<EntityScene> scene;
         bool sceneChanged = false;
+
+        std::unique_ptr<DisplayDriver> displayDriver;
+        std::unique_ptr<GpuDriver> gpuDriver;
+        std::unique_ptr<SPIRVCompiler> shaderCompiler;
+        std::unique_ptr<SPIRVDecompiler> shaderDecompiler;
+
+        std::unique_ptr<FontDriver> fontDriver;
 
         std::unique_ptr<Window> window;
         std::unique_ptr<GpuDriver> gpu;

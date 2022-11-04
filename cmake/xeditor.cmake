@@ -16,4 +16,4 @@ else ()
 endif ()
 
 target_include_directories(xeditor PUBLIC ${Engine.Dir.INCLUDE} ${XEditor.Dir.INCLUDE} ${XEditor.Dir.SRC} ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(xeditor xengine Qt5::Core Qt5::Widgets)
+target_link_libraries(xeditor xengine Threads::Threads Qt5::Core Qt5::Widgets)

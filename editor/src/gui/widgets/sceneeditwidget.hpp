@@ -26,6 +26,7 @@
 #include <QSplitter>
 #include <QHeaderView>
 #include <QMenu>
+#include <QResizeEvent>
 
 #include <utility>
 
@@ -34,11 +35,11 @@
 #include "ecs/entityscene.hpp"
 #include "ecs/components/transformcomponent.hpp"
 
-class EntitySceneWidget : public QWidget, public EntityScene::Listener {
+class SceneEditWidget : public QWidget, public EntityScene::Listener {
 Q_OBJECT
 public:
     //TODO: QTreeWidget entities display
-    explicit EntitySceneWidget(QWidget *parent)
+    explicit SceneEditWidget(QWidget *parent)
             : QWidget(parent) {
         splitter = new QSplitter(this);
         sceneTree = new QTreeWidget(this);
@@ -55,10 +56,12 @@ public:
 
         connect(entityEditWidget, SIGNAL(addComponent()), this, SLOT(addComponent()));
         connect(entityEditWidget,
-                SIGNAL(updateComponent(std::any, std::type_index)),
+                SIGNAL(updateComponent(const Component&)),
                 this,
-                SLOT(update(std::any, std::type_index)));
-        connect(entityEditWidget, SIGNAL(destroyComponent(std::type_index)), this,
+                SLOT(update(const Component&)));
+        connect(entityEditWidget,
+                SIGNAL(destroyComponent(std::type_index)),
+                this,
                 SLOT(destroy(std::type_index)));
         connect(entityEditWidget,
                 SIGNAL(destroyEntity()),
@@ -66,7 +69,7 @@ public:
                 SLOT(destroyEntity()));
     }
 
-    ~EntitySceneWidget() override {
+    ~SceneEditWidget() override {
         if (scene) {
             scene->removeListener(*this);
         }
@@ -102,7 +105,7 @@ signals:
 
     void createComponent(Entity entity, std::type_index componentType);
 
-    void updateComponent(Entity entity, const std::any &value, std::type_index type);
+    void updateComponent(Entity entity, const Component &value);
 
     void destroyComponent(Entity entity, std::type_index type);
 
@@ -154,9 +157,9 @@ private slots:
                 SLOT(triggered(QAction * )));
     }
 
-    void update(const std::any &value, std::type_index type) {
+    void update(const Component &value) {
         auto *sen = dynamic_cast<EntityWidget *>(sender());
-        emit updateComponent(sen->getEntity(), value, type);
+        emit updateComponent(sen->getEntity(), value);
     }
 
     void destroy(std::type_index type) {

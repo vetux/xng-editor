@@ -52,3 +52,7 @@ ProjectSettings &Project::getSettings() {
 const ProjectSettings &Project::getSettings() const {
     return settings;
 }
+
+const std::filesystem::path &Project::getDirectory() const {
+    return directory;
+}

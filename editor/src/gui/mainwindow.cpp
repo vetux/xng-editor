@@ -44,7 +44,8 @@ MainWindow::MainWindow() {
 
     rootLayout = new QHBoxLayout();
 
-    sceneEditWidget = new EntitySceneWidget(this);
+    sceneRenderWidget = new SceneRenderWidget(this);
+    sceneEditWidget = new SceneEditWidget(this);
     fileBrowserWidget = new FileBrowserWidget(this);
 
     middleSplitter = new QSplitter(this);
@@ -52,6 +53,8 @@ MainWindow::MainWindow() {
     rightSplitter = new QSplitter(this);
 
     tabWidget = new QTabWidget(this);
+
+    tabWidget->addTab(sceneRenderWidget, "Viewport");
 
     leftSplitter->setOrientation(Qt::Vertical);
     rightSplitter->setOrientation(Qt::Vertical);
@@ -75,27 +78,28 @@ MainWindow::MainWindow() {
     loadStateFile();
 
     sceneEditWidget->setScene(scene);
+    sceneRenderWidget->setScene(scene);
 
     connect(sceneEditWidget,
             SIGNAL(createEntity(const std::string &)),
             this,
             SLOT(createEntity(const std::string &)));
     connect(sceneEditWidget,
-            SIGNAL(setEntityName(EntityHandle, const std::string &)),
+            SIGNAL(setEntityName(Entity, const std::string &)),
             this,
-            SLOT(setEntityName(EntityHandle, const std::string &)));
+            SLOT(setEntityName(Entity, const std::string &)));
     connect(sceneEditWidget,
-            SIGNAL(createComponent(EntityHandle, std::type_index)),
+            SIGNAL(createComponent(Entity, std::type_index)),
             this,
-            SLOT(createComponent(EntityHandle, std::type_index)));
+            SLOT(createComponent(Entity, std::type_index)));
     connect(sceneEditWidget,
-            SIGNAL(updateComponent(EntityHandle, const std::any &, std::type_index)),
+            SIGNAL(updateComponent(Entity, const Component &)),
             this,
-            SLOT(updateComponent(EntityHandle, const std::any &, std::type_index)));
+            SLOT(updateComponent(Entity, const Component &)));
     connect(sceneEditWidget,
-            SIGNAL(destroyComponent(EntityHandle, std::type_index)),
+            SIGNAL(destroyComponent(Entity, std::type_index)),
             this,
-            SLOT(destroyComponent(EntityHandle, std::type_index)));
+            SLOT(destroyComponent(Entity, std::type_index)));
 }
 
 MainWindow::~MainWindow() {
@@ -144,11 +148,11 @@ void MainWindow::createComponent(Entity entity, std::type_index componentType) {
     }
 }
 
-void MainWindow::updateComponent(Entity entity, const std::any &value, std::type_index type) {
-    if (type == typeid(TransformComponent)) {
-        scene->updateComponent(entity.getHandle(), std::any_cast<TransformComponent>(value));
-    } else if (type == typeid(CanvasTransformComponent)) {
-        scene->updateComponent(entity.getHandle(), std::any_cast<CanvasTransformComponent>(value));
+void MainWindow::updateComponent(Entity entity, const Component &value) {
+    if (value.getType() == typeid(TransformComponent)) {
+        scene->updateComponent(entity.getHandle(), dynamic_cast<const TransformComponent&>(value));
+    } else if (value.getType() == typeid(CanvasTransformComponent)) {
+        scene->updateComponent(entity.getHandle(), dynamic_cast<const CanvasTransformComponent&>(value));
     }
 }
 

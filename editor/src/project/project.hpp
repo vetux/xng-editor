@@ -61,7 +61,10 @@ public:
 
     const ProjectSettings &getSettings() const;
 
+    const std::filesystem::path &getDirectory() const;
+
 private:
+    std::filesystem::path directory;
     ProjectSettings settings;
 };
 
