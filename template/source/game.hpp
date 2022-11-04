@@ -21,6 +21,8 @@
 
 #include "xengine.hpp"
 
+#include "systems/examplesystem.hpp"
+
 using namespace xng;
 
 class Game : public Application {
@@ -28,22 +30,19 @@ public:
     Game(int argc, char *argv[])
             : Application(argc, argv),
               dataArchive(std::make_unique<DirectoryArchive>(std::filesystem::current_path() / "data/")),
-              frameGraphRenderer(*renderDevice),
-              renderSystem(window->getRenderTarget(), frameGraphRenderer),
-              audioSystem(*audioDevice, ResourceRegistry::getDefaultRegistry()),
               assetPakStream(dataArchive->open("assets.pak")),
+              cryptoDriver(DriverRegistry::load<CryptoDriver>("cryptopp")),
+              zip(cryptoDriver->createGzip()),
+              sha(cryptoDriver->createSHA()),
               assetPakArchive(std::make_shared<PakArchive>(
-                      std::vector<std::reference_wrapper<std::istream>>({*assetPakStream}))) {
+                      std::vector<std::reference_wrapper<std::istream>>({*assetPakStream}),
+                      false,
+                      *zip,
+                      *sha)){
         ResourceRegistry::getDefaultRegistry().addArchive("assets", assetPakArchive);
     }
 
     void start() override {
-        EntityContainer c;
-        ecs.setEntityContainer(c << JsonProtocol().deserialize(*assetPakArchive->open("/defaultScene.json")));
-        ecs.setSystems({
-                               audioSystem,
-                               renderSystem
-                       });
         ecs.start();
     }
 
@@ -56,17 +55,17 @@ public:
     }
 
 private:
+    std::unique_ptr<CryptoDriver> cryptoDriver;
+
     ECS ecs;
+
+    std::unique_ptr<GZip> zip;
+    std::unique_ptr<SHA> sha;
 
     std::unique_ptr<DirectoryArchive> dataArchive;
 
     std::unique_ptr<std::istream> assetPakStream;
     std::shared_ptr<PakArchive> assetPakArchive;
-
-    FrameGraphRenderer frameGraphRenderer;
-
-    RenderSystem renderSystem;
-    AudioSystem audioSystem;
 };
 
 #endif //XEDITOR_EDITORAPPLICATION_HPP

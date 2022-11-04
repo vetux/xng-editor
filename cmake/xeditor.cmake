@@ -1,10 +1,9 @@
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
-set(XEditor.Dir.INCLUDE include/)
-set(XEditor.Dir.SRC src/)
+set(XEditor.Dir.SRC editor/src/)
 
-file(GLOB_RECURSE XEditor.File.Qt.GUI_HDR include/gui/*.hpp)
+file(GLOB_RECURSE XEditor.File.Qt.GUI_HDR ${XEditor.Dir.SRC}gui/*.hpp)
 
 file(GLOB_RECURSE XEditor.File.Qt.SRC ${XEditor.Dir.SRC}*.cpp ${XEditor.Dir.SRC}.c)
 

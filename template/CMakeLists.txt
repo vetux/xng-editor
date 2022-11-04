@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-project(XNG-Project)
+project(NewProject)
 
 # These variables are set by the editor application when building the project
 set(EXE_NAME game) # The name of the target
-set(SRC_DIR template/source/) # Source directory
-set(INC_DIR template/source/ lib/include) # Include directory
-set(LNK_DIR lib/bin) # Link directory
+set(SRC_DIR template/source/ template/plugin/) # Source directory
+set(INC_DIR template/source/ template/plugin/) # Include directory
+set(LNK_DIR) # Link directory
 set(LINK xengine) # Link libraries
 
 file(GLOB_RECURSE SRC ${SRC_DIR}*.c ${SRC_DIR}*.cpp)

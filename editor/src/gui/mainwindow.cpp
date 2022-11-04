@@ -134,29 +134,29 @@ void MainWindow::setEntityName(Entity entity, const std::string &name) {
 
 void MainWindow::createComponent(Entity entity, std::type_index componentType) {
     if (componentType == typeid(TransformComponent)) {
-        if (scene->check<TransformComponent>(entity.getHandle())) {
+        if (scene->checkComponent<TransformComponent>(entity.getHandle())) {
             QMessageBox::warning(this, "Cannot Create Component", ("TransformComponent already exists on " + entity.toString()).c_str());
         } else {
-            scene->createComponent(entity, TransformComponent());
+            scene->createComponent(entity.getHandle(), TransformComponent());
         }
     } else if (componentType == typeid(CanvasTransformComponent)) {
-        scene->createComponent(entity, CanvasTransformComponent());
+        scene->createComponent(entity.getHandle(), CanvasTransformComponent());
     }
 }
 
 void MainWindow::updateComponent(Entity entity, const std::any &value, std::type_index type) {
     if (type == typeid(TransformComponent)) {
-        scene->updateComponent(entity, std::any_cast<TransformComponent>(value));
+        scene->updateComponent(entity.getHandle(), std::any_cast<TransformComponent>(value));
     } else if (type == typeid(CanvasTransformComponent)) {
-        scene->updateComponent(entity, std::any_cast<CanvasTransformComponent>(value));
+        scene->updateComponent(entity.getHandle(), std::any_cast<CanvasTransformComponent>(value));
     }
 }
 
 void MainWindow::destroyComponent(Entity entity, std::type_index type) {
     if (type == typeid(TransformComponent)) {
-        scene->destroyComponent<TransformComponent>(entity);
+        scene->destroyComponent<TransformComponent>(entity.getHandle());
     } else if (type == typeid(CanvasTransformComponent)) {
-        scene->destroyComponent<CanvasTransformComponent>(entity);
+        scene->destroyComponent<CanvasTransformComponent>(entity.getHandle());
     }
 }
 

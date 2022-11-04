@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-project(xEditor)
+project(xng-editor)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -13,10 +13,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GN
     set(CMAKE_CXX_FLAGS_RELEASE -O3)
 endif ()
 
-add_compile_definitions(XENGINE_EXPORT=)
+include(config.cmake OPTIONAL)
 
-include(cmake/config.cmake)
 include(cmake/xeditor.cmake)
 
-# Uncomment to enable syntax highlighting
-# include(template/CMakeLists.txt)
+# Uncomment to enable syntax highlighting of the template source code
+#include(template/CMakeLists.txt)
