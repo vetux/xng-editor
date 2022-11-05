@@ -59,15 +59,16 @@ public:
      */
     void save() const;
 
-    ProjectSettings &getSettings();
-
     const ProjectSettings &getSettings() const;
+
+    void setSettings(const ProjectSettings &settings);
 
     const std::filesystem::path &getDirectory() const;
 
     bool initialized() const {
         return !directory.empty();
     }
+
 private:
     std::filesystem::path directory;
     ProjectSettings settings;

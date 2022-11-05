@@ -24,8 +24,11 @@
 #include <utility>
 
 #include "xng/crypto/aes.hpp"
+#include "xng/io/messageable.hpp"
 
-struct AssetBundle {
+using namespace xng;
+
+struct AssetBundle : public Messageable {
     std::string name{};
     std::string scheme{}; // The scheme under which the bundle is made accessible
 
@@ -34,6 +37,33 @@ struct AssetBundle {
     xng::AES::Key key{};
 
     std::filesystem::path directory; // The directory which is bundled into name.pak
+
+    Messageable &operator<<(const Message &message) override {
+        name = message.value("name", std::string());
+        scheme = message.value("scheme", std::string());
+
+        compress = message.value("compress", true);
+        encrypt = message.value("encrypt", false);
+        key = message.value("key", std::string());
+
+        directory = message.value("directory", std::string());
+
+        return *this;
+    }
+
+    Message &operator>>(Message &message) const override {
+        message = Message(Message::DICTIONARY);
+        message["name"] = name;
+        message["scheme"] = scheme;
+
+        message["compress"] = compress;
+        message["encrypt"] = encrypt;
+        message["key"] = key;
+
+        message["directory"] = directory.string();
+
+        return message;
+    }
 };
 
 #endif //XEDITOR_ASSETBUNDLE_HPP

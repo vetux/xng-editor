@@ -26,8 +26,12 @@
 #include "project/buildoptimization.hpp"
 #include "project/buildplatform.hpp"
 
-struct BuildSettings {
-    std::string settingsName{};
+#include "xng/io/messageable.hpp"
+
+using namespace xng;
+
+struct BuildSettings : public Messageable {
+    std::string name{};
 
     BuildPlatform targetPlatform{};
     BuildOptimization optimization{};
@@ -39,7 +43,60 @@ struct BuildSettings {
     std::set<std::filesystem::path> srcDirs{};
     std::set<std::filesystem::path> incDirs{};
     std::set<std::filesystem::path> lnkDirs{};
-    std::string linkLibraries{};
+    std::set<std::string> linkedLibraries{};
+
+    Messageable &operator<<(const Message &message) override {
+        name = message.value("name", std::string());
+        targetPlatform = (BuildPlatform) message.value("targetPlatform", (int) LINUX_64);
+        for (auto &v: message.value("srcDirs").asList()) {
+            srcDirs.insert(v.asString());
+        }
+        for (auto &v: message.value("incDirs").asList()) {
+            incDirs.insert(v.asString());
+        }
+        for (auto &v: message.value("lnkDirs").asList()) {
+            lnkDirs.insert(v.asString());
+        }
+        for (auto &v: message.value("linkedLibraries").asList()) {
+            linkedLibraries.insert(v.asString());
+        }
+        return *this;
+    }
+
+    Message &operator>>(Message &message) const override {
+        message = Message(xng::Message::DICTIONARY);
+        message["name"] = name;
+        message[targetPlatform] = (int) targetPlatform;
+        message[optimization] = (int) optimization;
+        message["outputDir"] = outputDir.string();
+        message["targetName"] = targetName;
+
+        auto vec = std::vector<Message>();
+        for (auto &v: srcDirs) {
+            vec.emplace_back(v.string());
+        }
+        message["srcDirs"] = vec;
+
+        vec.clear();
+        for (auto &v: incDirs) {
+            vec.emplace_back(v.string());
+        }
+        message["incDirs"] = vec;
+
+        vec.clear();
+        for (auto &v: lnkDirs) {
+            vec.emplace_back(v.string());
+        }
+        message["lnkDirs"] = vec;
+
+        vec.clear();
+        for (auto &v: linkedLibraries) {
+            vec.emplace_back(v);
+        }
+        message["linkedLibraries"] = vec;
+
+        return message;
+    }
 };
 
 #endif //XEDITOR_BUILDSETTINGS_HPP

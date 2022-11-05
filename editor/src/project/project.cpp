@@ -50,12 +50,12 @@ void Project::save() const {
     // Serialize and write settings object.
 }
 
-ProjectSettings &Project::getSettings() {
+const ProjectSettings &Project::getSettings() const {
     return settings;
 }
 
-const ProjectSettings &Project::getSettings() const {
-    return settings;
+void Project::setSettings(const ProjectSettings &value) {
+    settings = value;
 }
 
 const std::filesystem::path &Project::getDirectory() const {
