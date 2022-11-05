@@ -21,39 +21,19 @@
 
 #include <set>
 #include <filesystem>
+#include <utility>
 
 #include "xng/crypto/aes.hpp"
 
 struct AssetBundle {
-    AssetBundle() = default;
-
-    AssetBundle(std::string name,
-                std::set<std::filesystem::path> directories)
-            : name(std::move(name)), directories(std::move(directories)) {}
-
-    AssetBundle(std::string name,
-                xng::AES::Key key,
-                std::set<std::filesystem::path> directories)
-            : name(std::move(name)), key(std::move(key)), directories(std::move(directories)) {}
-
-    AssetBundle(std::string name,
-                bool compress,
-                bool encrypt,
-                xng::AES::Key key,
-                std::set<std::filesystem::path> directories)
-            : name(std::move(name)),
-              compress(compress),
-              encrypt(encrypt),
-              key(std::move(key)),
-              directories(std::move(directories)) {}
-
-    std::string name{}; // The bundle is made accessible as the "name" scheme
+    std::string name{};
+    std::string scheme{}; // The scheme under which the bundle is made accessible
 
     bool compress = true;
     bool encrypt = false;
     xng::AES::Key key{};
 
-    std::set<std::filesystem::path> directories{}; // The set of directory paths (relative to the project path) which are bundled into name.pak
+    std::filesystem::path directory; // The directory which is bundled into name.pak
 };
 
 #endif //XEDITOR_ASSETBUNDLE_HPP

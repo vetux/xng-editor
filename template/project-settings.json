@@ -2,7 +2,9 @@
   "name": "New Project",
   "bundles": [
     {
-      "name": "assets"
+      "name": "Assets",
+      "scheme": "assets",
+      "directory": "assets/"
     }
   ],
   "buildSettings": []
