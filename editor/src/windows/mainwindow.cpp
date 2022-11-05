@@ -295,6 +295,8 @@ void MainWindow::newScene() {
         auto &file = dialog.selectedFiles().at(0);
         scenePath = std::filesystem::path(file.toStdString());
         scene = std::make_shared<EntityScene>();
+        sceneEditWidget->setScene(scene);
+        sceneRenderWidget->setScene(scene, sceneMutex);
     }
 }
 
@@ -310,7 +312,7 @@ void MainWindow::openScene() {
 
     if (dialog.exec() == QFileDialog::Accepted) {
         auto &file = dialog.selectedFiles().at(0);
-        loadScene(std::filesystem::path(file.toStdString()));
+        loadScene(file.toStdString());
     }
 }
 
