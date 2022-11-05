@@ -66,8 +66,6 @@ MainWindow::MainWindow() : QMainWindow(),
                            actions(this) {
     scene = std::make_shared<EntityScene>();
 
-    menuBar()->addMenu("File");
-
     rootWidget = new QWidget(this);
 
     setCentralWidget(rootWidget);
@@ -126,6 +124,10 @@ MainWindow::MainWindow() : QMainWindow(),
             SIGNAL(destroyComponent(Entity, std::type_index)),
             this,
             SLOT(destroyComponent(Entity, std::type_index)));
+
+    menuBar()->addMenu(actions.fileMenu);
+    menuBar()->addMenu(actions.buildMenu);
+    menuBar()->addMenu(actions.sceneMenu);
 }
 
 MainWindow::~MainWindow() {
