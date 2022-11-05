@@ -24,7 +24,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 
-#include "ecs/entity.hpp"
+#include "xng/ecs/entity.hpp"
 
 #include "widgets/components/componentwidget.hpp"
 #include "widgets/components/canvascomponentwidget.hpp"
@@ -106,6 +106,10 @@ public:
 
         if (value.hasName())
             headerText->setText(value.getName().c_str());
+
+        if (entity.checkComponent<AudioListenerComponent>()){
+
+        }
 
         if (entity.checkComponent<AudioSourceComponent>()) {
             auto *widget = new ComponentWidget(this);

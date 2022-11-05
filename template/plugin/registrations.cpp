@@ -6,7 +6,7 @@
  * Registered systems can access the application through the static Application::getCurrentApplication interface.
 */
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 #include "systems/examplesystem.hpp"
 

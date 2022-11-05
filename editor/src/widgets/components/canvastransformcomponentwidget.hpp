@@ -22,7 +22,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 #include "componentwidget.hpp"
 

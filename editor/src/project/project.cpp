@@ -19,10 +19,15 @@
 
 #include "project/project.hpp"
 
-#include "asset/scene.hpp"
+#include "xng/asset/scene.hpp"
+
+#include <filesystem>
 
 void Project::create(const std::filesystem::path &outputDir, const std::filesystem::path &templateDir) {
-
+    if (!std::filesystem::is_empty(outputDir)) {
+        throw std::runtime_error("Output directory is not empty.");
+    }
+    std::filesystem::copy(templateDir, outputDir);
 }
 
 Project::Project(const std::filesystem::path &dir) {

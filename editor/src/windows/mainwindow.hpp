@@ -27,7 +27,7 @@
 #include <QTimer>
 #include <QTabWidget>
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 #include "widgets/scenerenderwidget.hpp"
 #include "widgets/sceneeditwidget.hpp"
@@ -43,6 +43,7 @@ Q_OBJECT
 public:
     struct Actions {
         QMenu *fileMenu;
+        QAction *settingsAction;
         QAction *projectCreateAction;
         QAction *projectOpenAction;
         QAction *projectSaveAction;
@@ -76,6 +77,8 @@ protected slots:
 
     void destroyComponent(Entity entity, std::type_index type);
 
+    void openSettings();
+
     void newProject();
 
     void openProject();
@@ -92,6 +95,8 @@ protected slots:
 
     void openBuildSettings();
 
+    void shutdown();
+
 private:
     void keyPressEvent(QKeyEvent *event) override;
 
@@ -103,9 +108,11 @@ private:
 
     void saveStateFile();
 
-    void loadSceneFile(const std::string &path);
+    void loadScene(const std::string &path);
 
-    void saveSceneFile(const std::string &path);
+    void saveScene();
+
+    void checkUnsavedSceneChanges();
 
     QWidget *rootWidget;
     QHBoxLayout *rootLayout;
@@ -120,9 +127,16 @@ private:
 
     QTabWidget *tabWidget;
 
+    std::filesystem::path scenePath;
+
+    std::shared_ptr<std::mutex> sceneMutex;
     std::shared_ptr<xng::EntityScene> scene;
 
+    bool sceneSaved = false;
+
     Actions actions;
+
+    Project project;
 };
 
 #endif //XEDITOR_MAINWINDOW_HPP

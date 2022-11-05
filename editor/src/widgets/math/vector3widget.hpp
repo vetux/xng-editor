@@ -25,7 +25,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 using namespace xng;
 

@@ -23,7 +23,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 #include "vector3widget.hpp"
 

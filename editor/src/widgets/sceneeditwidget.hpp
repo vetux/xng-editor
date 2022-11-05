@@ -32,8 +32,8 @@
 
 #include "entityeditwidget.hpp"
 
-#include "ecs/entityscene.hpp"
-#include "ecs/components/transformcomponent.hpp"
+#include "xng/ecs/entityscene.hpp"
+#include "xng/ecs/components/transformcomponent.hpp"
 
 class SceneEditWidget : public QWidget, public EntityScene::Listener {
 Q_OBJECT

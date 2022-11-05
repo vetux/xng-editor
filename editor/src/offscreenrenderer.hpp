@@ -23,7 +23,7 @@
 #include <thread>
 #include <utility>
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 namespace xng {
     /**
@@ -69,6 +69,7 @@ namespace xng {
 
                 canvasRenderSystem = std::make_unique<CanvasRenderSystem>(*ren2d, *target, *fontDriver);
                 meshRenderSystem = std::make_unique<MeshRenderSystem>(*frameGraphRenderer);
+                canvasRenderSystem->setDrawDebugGeometry(true);
                 ecs.setSystems({*canvasRenderSystem, *meshRenderSystem});
                 ecs.setScene(std::make_shared<EntityScene>());
                 ecs.start();
@@ -85,10 +86,11 @@ namespace xng {
             }
         }
 
-        void setScene(const EntityScene &value) {
+        void setScene(const std::shared_ptr<EntityScene> &value, const std::shared_ptr<std::mutex> &mValue) {
             std::lock_guard<std::mutex> guard(mutex);
-            scene = std::make_shared<EntityScene>(value);
+            scene = value;
             sceneChanged = true;
+            sceneMutex = mValue;
         }
 
         void setFrameGraphLayout(const FrameGraphLayout &value) {
@@ -128,9 +130,10 @@ namespace xng {
             auto lastFrame = std::chrono::high_resolution_clock::now();
             DeltaTime deltaTime = 0;
             while (!shutdown) {
-                try {
+             //   try {
                     ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
                     std::lock_guard<std::mutex> guard(mutex);
+                    std::lock_guard<std::mutex> sGuard(*sceneMutex);
                     if (layoutChanged) {
                         frameGraphRenderer->setLayout(layout);
                         layoutChanged = false;
@@ -150,14 +153,14 @@ namespace xng {
                     }
                     ecs.update(deltaTime);
                     frame = texture->download();
-                } catch (...) {
+             /*   } catch (...) {
                     {
                         std::lock_guard<std::mutex> guard(mutex);
                         exception = std::current_exception();
                     }
                     shutdown = true;
                     std::rethrow_exception(exception);
-                }
+                }*/
 
                 auto frameEnd = std::chrono::high_resolution_clock::now();
                 auto frameDelta = frameEnd - frameStart;
@@ -185,6 +188,7 @@ namespace xng {
         Vec2i frameSize = {10, 10};
         bool frameSizeChanged = false;
 
+        std::shared_ptr<std::mutex> sceneMutex;
         std::shared_ptr<EntityScene> scene;
         bool sceneChanged = false;
 

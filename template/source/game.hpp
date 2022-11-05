@@ -19,7 +19,7 @@
 #ifndef XEDITOR_EDITORAPPLICATION_HPP
 #define XEDITOR_EDITORAPPLICATION_HPP
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 #include "systems/examplesystem.hpp"
 

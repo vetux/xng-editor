@@ -24,6 +24,8 @@
 #include <QListWidget>
 #include <QVBoxLayout>
 
+#include <filesystem>
+
 class FileBrowserWidget : public QWidget {
 Q_OBJECT
 public:
@@ -43,6 +45,19 @@ public:
     const std::string &getCurrentPath() {
         return currentPath;
     }
+
+signals:
+    void openMaterial(const std::filesystem::path &path);
+
+    void openShader(const std::filesystem::path &path);
+
+    void openSkybox(const std::filesystem::path &path);
+
+    void openTexture(const std::filesystem::path &path);
+
+    void openSprite(const std::filesystem::path &path);
+
+    void openSpriteAnimation(const std::filesystem::path &path);
 
 private:
     std::string currentPath;

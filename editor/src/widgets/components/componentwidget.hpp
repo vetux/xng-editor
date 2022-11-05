@@ -26,7 +26,7 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 
-#include "xengine.hpp"
+#include "xng/xng.hpp"
 
 using namespace xng;
 

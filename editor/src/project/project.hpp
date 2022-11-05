@@ -37,6 +37,8 @@ public:
      */
     static void create(const std::filesystem::path &outputDir, const std::filesystem::path &templateDir);
 
+    Project() = default;
+
     /**
      * Load an existing project from a directory.
      * The directory must contain dir/project-settings.json.
@@ -63,6 +65,9 @@ public:
 
     const std::filesystem::path &getDirectory() const;
 
+    bool initialized() const {
+        return !directory.empty();
+    }
 private:
     std::filesystem::path directory;
     ProjectSettings settings;
