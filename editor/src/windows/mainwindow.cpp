@@ -17,7 +17,7 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "gui/mainwindow.hpp"
+#include "windows/mainwindow.hpp"
 
 #include <QVBoxLayout>
 #include <QKeyEvent>
@@ -29,11 +29,41 @@
 
 #include "xengine.hpp"
 
-#include "gui/widgets/entityeditwidget.hpp"
+#include "widgets/entityeditwidget.hpp"
 
 using namespace xng;
 
-MainWindow::MainWindow() {
+MainWindow::Actions::Actions(QWidget *parent) {
+    fileMenu = new QMenu("File", parent);
+    projectCreateAction = new QAction("New Project...", parent);
+    projectOpenAction = new QAction("Open Project...", parent);
+    projectSaveAction = new QAction("Save Project", parent);
+    projectSettingsAction = new QAction("Project Settings...", parent);
+    exitAction = new QAction("Exit", parent);
+
+    fileMenu->addAction(projectCreateAction);
+    fileMenu->addAction(projectOpenAction);
+    fileMenu->addAction(projectSaveAction);
+    fileMenu->addAction(projectSettingsAction);
+    fileMenu->addAction(exitAction);
+
+    sceneMenu = new QMenu("Scene", parent);
+    sceneNewAction = new QAction("New...", parent);
+    sceneOpenAction = new QAction("Open...", parent);
+
+    sceneMenu->addAction(sceneNewAction);
+    sceneMenu->addAction(sceneOpenAction);
+
+    buildMenu = new QMenu("Build", parent);
+    buildProjectAction = new QAction("Build Project...", parent);
+    buildSettingsAction = new QAction("Open Build Settings...", parent);
+
+    buildMenu->addAction(buildProjectAction);
+    buildMenu->addAction(buildSettingsAction);
+}
+
+MainWindow::MainWindow() : QMainWindow(),
+                           actions(this) {
     scene = std::make_shared<EntityScene>();
 
     menuBar()->addMenu("File");
@@ -70,10 +100,6 @@ MainWindow::MainWindow() {
     rootLayout->addWidget(middleSplitter);
 
     rootWidget->setLayout(rootLayout);
-
-    connect(&timer, SIGNAL(timeout()), this, SLOT(onTimeout()));
-
-    timer.start(1000 / 60);
 
     loadStateFile();
 
@@ -118,10 +144,6 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
     QWidget::mousePressEvent(event);
 }
 
-void MainWindow::onTimeout() {
-
-}
-
 void MainWindow::createEntity(const std::string &name) {
     if (scene->entityNameExists(name)) {
         QMessageBox::warning(this, "Cannot Create Entity", ("Entity with name " + name + " already exists").c_str());
@@ -139,7 +161,8 @@ void MainWindow::setEntityName(Entity entity, const std::string &name) {
 void MainWindow::createComponent(Entity entity, std::type_index componentType) {
     if (componentType == typeid(TransformComponent)) {
         if (scene->checkComponent<TransformComponent>(entity.getHandle())) {
-            QMessageBox::warning(this, "Cannot Create Component", ("TransformComponent already exists on " + entity.toString()).c_str());
+            QMessageBox::warning(this, "Cannot Create Component",
+                                 ("TransformComponent already exists on " + entity.toString()).c_str());
         } else {
             scene->createComponent(entity.getHandle(), TransformComponent());
         }
@@ -150,9 +173,9 @@ void MainWindow::createComponent(Entity entity, std::type_index componentType) {
 
 void MainWindow::updateComponent(Entity entity, const Component &value) {
     if (value.getType() == typeid(TransformComponent)) {
-        scene->updateComponent(entity.getHandle(), dynamic_cast<const TransformComponent&>(value));
+        scene->updateComponent(entity.getHandle(), dynamic_cast<const TransformComponent &>(value));
     } else if (value.getType() == typeid(CanvasTransformComponent)) {
-        scene->updateComponent(entity.getHandle(), dynamic_cast<const CanvasTransformComponent&>(value));
+        scene->updateComponent(entity.getHandle(), dynamic_cast<const CanvasTransformComponent &>(value));
     }
 }
 
@@ -162,6 +185,38 @@ void MainWindow::destroyComponent(Entity entity, std::type_index type) {
     } else if (type == typeid(CanvasTransformComponent)) {
         scene->destroyComponent<CanvasTransformComponent>(entity.getHandle());
     }
+}
+
+void MainWindow::newProject() {
+
+}
+
+void MainWindow::openProject() {
+
+}
+
+void MainWindow::saveProject() {
+
+}
+
+void MainWindow::openProjectSettings() {
+
+}
+
+void MainWindow::newScene() {
+
+}
+
+void MainWindow::openScene() {
+
+}
+
+void MainWindow::buildProject() {
+
+}
+
+void MainWindow::openBuildSettings() {
+
 }
 
 void MainWindow::loadStateFile() {

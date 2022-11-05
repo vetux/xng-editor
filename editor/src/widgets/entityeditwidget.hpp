@@ -26,13 +26,13 @@
 
 #include "ecs/entity.hpp"
 
-#include "gui/widgets/components/componentwidget.hpp"
-#include "gui/widgets/components/canvascomponentwidget.hpp"
-#include "gui/widgets/components/canvastransformcomponentwidget.hpp"
-#include "gui/widgets/components/rigidbodycomponentwidget.hpp"
-#include "gui/widgets/components/spriteanimationcomponentwidget.hpp"
-#include "gui/widgets/components/spritecomponentwidget.hpp"
-#include "gui/widgets/components/transformcomponentwidget.hpp"
+#include "widgets/components/componentwidget.hpp"
+#include "widgets/components/canvascomponentwidget.hpp"
+#include "widgets/components/canvastransformcomponentwidget.hpp"
+#include "widgets/components/rigidbodycomponentwidget.hpp"
+#include "widgets/components/spriteanimationcomponentwidget.hpp"
+#include "widgets/components/spritecomponentwidget.hpp"
+#include "widgets/components/transformcomponentwidget.hpp"
 
 class EntityEditWidget : public QWidget {
 Q_OBJECT

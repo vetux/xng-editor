@@ -29,24 +29,42 @@
 
 #include "xengine.hpp"
 
-#include "gui/widgets/scenerenderwidget.hpp"
-#include "gui/widgets/sceneeditwidget.hpp"
-#include "gui/widgets/entityeditwidget.hpp"
-#include "gui/tool/filebrowser.hpp"
-#include "gui/dialog/projectbuilddialog.hpp"
+#include "widgets/scenerenderwidget.hpp"
+#include "widgets/sceneeditwidget.hpp"
+#include "widgets/entityeditwidget.hpp"
+#include "widgets/filebrowser.hpp"
+
+#include "windows/projectbuilddialog.hpp"
 
 #include "project/project.hpp"
 
 class MainWindow : public QMainWindow {
 Q_OBJECT
 public:
+    struct Actions {
+        QMenu *fileMenu;
+        QAction *projectCreateAction;
+        QAction *projectOpenAction;
+        QAction *projectSaveAction;
+        QAction *projectSettingsAction;
+        QAction *exitAction;
+
+        QMenu *sceneMenu;
+        QAction *sceneNewAction;
+        QAction *sceneOpenAction;
+
+        QMenu *buildMenu;
+        QAction *buildProjectAction;
+        QAction *buildSettingsAction;
+
+        explicit Actions(QWidget *parent = nullptr);
+    };
+
     MainWindow();
 
     ~MainWindow() override;
 
 protected slots:
-
-    void onTimeout();
 
     void createEntity(const std::string &name);
 
@@ -57,6 +75,22 @@ protected slots:
     void updateComponent(Entity entity, const Component &value);
 
     void destroyComponent(Entity entity, std::type_index type);
+
+    void newProject();
+
+    void openProject();
+
+    void saveProject();
+
+    void openProjectSettings();
+
+    void newScene();
+
+    void openScene();
+
+    void buildProject();
+
+    void openBuildSettings();
 
 private:
     void keyPressEvent(QKeyEvent *event) override;
@@ -88,7 +122,7 @@ private:
 
     std::shared_ptr<xng::EntityScene> scene;
 
-    QTimer timer;
+    Actions actions;
 };
 
 #endif //XEDITOR_MAINWINDOW_HPP

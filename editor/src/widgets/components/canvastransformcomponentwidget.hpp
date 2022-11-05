@@ -26,7 +26,7 @@
 
 #include "componentwidget.hpp"
 
-#include "gui/widgets/math/rectanglewidget.hpp"
+#include "widgets/math/rectanglewidget.hpp"
 
 using namespace xng;
 

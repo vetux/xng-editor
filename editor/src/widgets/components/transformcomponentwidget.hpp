@@ -25,7 +25,7 @@
 
 #include "componentwidget.hpp"
 
-#include "gui/widgets/math/transformwidget.hpp"
+#include "widgets/math/transformwidget.hpp"
 
 using namespace xng;
 

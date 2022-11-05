@@ -32,6 +32,8 @@ namespace xng {
      */
     class OffscreenRenderer {
     public:
+        typedef std::function<void(float, const ImageRGBA &)> Listener;
+
         explicit OffscreenRenderer(float frameRate,
                                    Vec2i frameSize)
                 : frameRate(frameRate),
@@ -115,6 +117,11 @@ namespace xng {
             return shutdown;
         }
 
+        void setListener(const Listener &v) {
+            std::lock_guard<std::mutex> guard(mutex);
+            callback = v;
+        }
+
     private:
         void loop() {
             auto frameStart = std::chrono::high_resolution_clock::now();
@@ -156,6 +163,10 @@ namespace xng {
                 auto frameDelta = frameEnd - frameStart;
                 frameStart = frameEnd;
                 deltaTime = static_cast<DeltaTime>(frameDelta.count()) / 1000000000.0f;
+
+                if (callback) {
+                    callback(deltaTime, frame);
+                }
 
                 auto frameTime = 1.0f / frameRate;
                 if (deltaTime < frameTime) {
@@ -207,6 +218,8 @@ namespace xng {
         ImageRGBA frame;
 
         std::exception_ptr exception = nullptr;
+
+        Listener callback;
     };
 }
 #endif //XENGINE_OFFSCREENRENDERER_HPP

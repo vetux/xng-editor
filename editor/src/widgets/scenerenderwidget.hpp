@@ -26,16 +26,24 @@
 #include <QResizeEvent>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QCoreApplication>
 
 #include "offscreenrenderer.hpp"
 
 class SceneRenderWidget : public QWidget {
 Q_OBJECT
 public:
+    class RenderEvent : public QEvent {
+    public:
+        float deltaTime;
+        QImage image;
+
+        RenderEvent() : QEvent(Type::None) {}
+    };
+
     explicit SceneRenderWidget(QWidget *parent = nullptr) : QWidget(parent),
                                                             ren(30, getSize()) {
         label = new QLabel(this);
-        timer = new QTimer(this);
         scroll = new QScrollArea(this);
 
         scroll->setWidget(label);
@@ -46,10 +54,17 @@ public:
         l->setMargin(0);
         l->addWidget(scroll);
         setLayout(l);
-        connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
 
-        timer->setSingleShot(false);
-        timer->start((int) (1000.0f / 60.0f));
+        ren.setListener([this](float deltaTime, const ImageRGBA &img) {
+            auto *event = new RenderEvent();
+            event->deltaTime = deltaTime;
+            event->image = QImage((const uchar *) img.getData(),
+                                  img.getWidth(),
+                                  img.getHeight(),
+                                  img.getWidth() * sizeof(ColorRGBA),
+                                  QImage::Format_RGBA8888);
+            QCoreApplication::postEvent(this, event);
+        });
     }
 
     void setScene(std::shared_ptr<EntityScene> scene) {
@@ -59,15 +74,20 @@ public:
     }
 
 protected:
+    bool event(QEvent *event) override {
+        if (event->type() == QEvent::None) {
+            try {
+                auto &ev = dynamic_cast<RenderEvent &>(*event);
+                label->setPixmap(QPixmap::fromImage(ev.image));
+            } catch (...) {}
+        }
+        return QWidget::event(event);
+    }
+
+protected:
     void resizeEvent(QResizeEvent *event) override {
         label->setFixedSize(event->size());
         ren.setFrameSize(convert(event->size()));
-    }
-
-private slots:
-
-    void timeout() {
-        label->setPixmap(getPixmap());
     }
 
 private:
@@ -79,17 +99,6 @@ private:
         return {v.width(), v.height()};
     }
 
-    QPixmap getPixmap() {
-        auto img = ren.getFrame();
-        QImage image((const uchar *) img.getData(),
-                     img.getWidth(),
-                     img.getHeight(),
-                     (int) ((size_t) img.getWidth() * sizeof(ColorRGBA)),
-                     QImage::Format::Format_RGBA8888);
-        return QPixmap::fromImage(image);
-    }
-
-    QTimer *timer;
     OffscreenRenderer ren;
     QScrollArea *scroll;
     QLabel *label;
