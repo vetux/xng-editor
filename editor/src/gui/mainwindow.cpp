@@ -29,7 +29,7 @@
 
 #include "xengine.hpp"
 
-#include "gui/widgets/entitywidget.hpp"
+#include "gui/widgets/entityeditwidget.hpp"
 
 using namespace xng;
 

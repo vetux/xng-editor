@@ -34,10 +34,10 @@
 #include "gui/widgets/components/spritecomponentwidget.hpp"
 #include "gui/widgets/components/transformcomponentwidget.hpp"
 
-class EntityWidget : public QWidget {
+class EntityEditWidget : public QWidget {
 Q_OBJECT
 public:
-    explicit EntityWidget(QWidget *parent)
+    explicit EntityEditWidget(QWidget *parent)
             : QWidget(parent) {
         setEnabled(false);
         setLayout(new QVBoxLayout);

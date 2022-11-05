@@ -31,7 +31,7 @@
 
 #include "gui/widgets/scenerenderwidget.hpp"
 #include "gui/widgets/sceneeditwidget.hpp"
-#include "gui/widgets/entitywidget.hpp"
+#include "gui/widgets/entityeditwidget.hpp"
 #include "gui/tool/filebrowser.hpp"
 #include "gui/dialog/projectbuilddialog.hpp"
 

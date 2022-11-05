@@ -30,7 +30,7 @@
 
 #include <utility>
 
-#include "entitywidget.hpp"
+#include "entityeditwidget.hpp"
 
 #include "ecs/entityscene.hpp"
 #include "ecs/components/transformcomponent.hpp"
@@ -43,7 +43,7 @@ public:
             : QWidget(parent) {
         splitter = new QSplitter(this);
         sceneTree = new QTreeWidget(this);
-        entityEditWidget = new EntityWidget(this);
+        entityEditWidget = new EntityEditWidget(this);
 
         setLayout(new QHBoxLayout);
 
@@ -126,7 +126,7 @@ private slots:
     }
 
     void addComponent() {
-        auto *widget = dynamic_cast<EntityWidget *>(sender());
+        auto *widget = dynamic_cast<EntityEditWidget *>(sender());
         auto cursorPos = QCursor::pos();
 
         auto *menu = new QMenu(this);
@@ -158,12 +158,12 @@ private slots:
     }
 
     void update(const Component &value) {
-        auto *sen = dynamic_cast<EntityWidget *>(sender());
+        auto *sen = dynamic_cast<EntityEditWidget *>(sender());
         emit updateComponent(sen->getEntity(), value);
     }
 
     void destroy(std::type_index type) {
-        auto *sen = dynamic_cast<EntityWidget *>(sender());
+        auto *sen = dynamic_cast<EntityEditWidget *>(sender());
         emit destroyComponent(sen->getEntity(), type);
     }
 
@@ -211,7 +211,7 @@ private:
 
     QSplitter *splitter;
     QTreeWidget *sceneTree;
-    EntityWidget *entityEditWidget;
+    EntityEditWidget *entityEditWidget;
 
     std::map<xng::Entity, QTreeWidgetItem *> entityItems;
 
