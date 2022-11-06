@@ -38,17 +38,17 @@ namespace xng {
                                    Vec2i frameSize)
                 : frameRate(frameRate),
                   frameSize(std::move(frameSize)),
-                  displayDriver(DriverRegistry::load<DisplayDriver>("glfw")),
-                  gpuDriver(DriverRegistry::load<GpuDriver>("opengl")),
-                  shaderCompiler(DriverRegistry::load<SPIRVCompiler>("shaderc")),
-                  shaderDecompiler(DriverRegistry::load<SPIRVDecompiler>("spirv-cross")),
-                  fontDriver(DriverRegistry::load<FontDriver>("freetype")) {
+                  displayDriver(DriverLoader::load<DisplayDriver>("glfw")),
+                  gpuDriver(DriverLoader::load<GpuDriver>("opengl")),
+                  shaderCompiler(DriverLoader::load<SPIRVCompiler>("shaderc")),
+                  shaderDecompiler(DriverLoader::load<SPIRVDecompiler>("spirv-cross")),
+                  fontDriver(DriverLoader::load<FontDriver>("freetype")) {
             thread = std::thread([this]() {
                 window = displayDriver->createWindow("opengl",
                                                      "Render Window",
                                                      {1, 1},
                                                      {.visible = false});
-                gpu = DriverRegistry::load<GpuDriver>("opengl");
+                gpu = DriverLoader::load<GpuDriver>("opengl");
                 device = gpu->createRenderDevice();
                 target = device->createRenderTarget(RenderTargetDesc{.size = this->frameSize,
                         .multisample = false,
