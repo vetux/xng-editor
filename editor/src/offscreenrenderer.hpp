@@ -38,18 +38,17 @@ namespace xng {
                                    Vec2i frameSize)
                 : frameRate(frameRate),
                   frameSize(std::move(frameSize)),
-                  displayDriver(DriverLoader::load<DisplayDriver>("glfw")),
-                  gpuDriver(DriverLoader::load<GpuDriver>("opengl")),
-                  shaderCompiler(DriverLoader::load<SPIRVCompiler>("shaderc")),
-                  shaderDecompiler(DriverLoader::load<SPIRVDecompiler>("spirv-cross")),
-                  fontDriver(DriverLoader::load<FontDriver>("freetype")) {
+                  displayDriver(DisplayDriver::load(GLFW)),
+                  gpuDriver(GpuDriver::load(OPENGL_4_6)),
+                  shaderCompiler(SPIRVCompiler::load(SHADERC)),
+                  shaderDecompiler(SPIRVDecompiler::load(SPIRV_CROSS)),
+                  fontDriver(FontDriver::load(FREETYPE)) {
             thread = std::thread([this]() {
                 window = displayDriver->createWindow("opengl",
                                                      "Render Window",
                                                      {1, 1},
                                                      {.visible = false});
-                gpu = DriverLoader::load<GpuDriver>("opengl");
-                device = gpu->createRenderDevice();
+                device = gpuDriver->createRenderDevice();
                 target = device->createRenderTarget(RenderTargetDesc{.size = this->frameSize,
                         .multisample = false,
                         .numberOfColorAttachments = 1});
@@ -130,37 +129,37 @@ namespace xng {
             auto lastFrame = std::chrono::high_resolution_clock::now();
             DeltaTime deltaTime = 0;
             while (!shutdown) {
-             //   try {
-                    ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
-                    std::lock_guard<std::mutex> guard(mutex);
-                    std::lock_guard<std::mutex> sGuard(*sceneMutex);
-                    if (layoutChanged) {
-                        frameGraphRenderer->setLayout(layout);
-                        layoutChanged = false;
-                    }
-                    if (sceneChanged) {
-                        ecs.setScene(scene);
-                        sceneChanged = false;
-                    }
-                    if (frameSizeChanged) {
-                        target->setColorAttachments({});
-                        TextureBufferDesc desc;
-                        desc.size = frameSize;
-                        desc.bufferType = HOST_VISIBLE;
-                        texture = device->createTextureBuffer(desc);
-                        target->setColorAttachments({*texture});
-                        frameSizeChanged = false;
-                    }
-                    ecs.update(deltaTime);
-                    frame = texture->download();
-             /*   } catch (...) {
-                    {
-                        std::lock_guard<std::mutex> guard(mutex);
-                        exception = std::current_exception();
-                    }
-                    shutdown = true;
-                    std::rethrow_exception(exception);
-                }*/
+                //   try {
+                ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
+                std::lock_guard<std::mutex> guard(mutex);
+                std::lock_guard<std::mutex> sGuard(*sceneMutex);
+                if (layoutChanged) {
+                    frameGraphRenderer->setLayout(layout);
+                    layoutChanged = false;
+                }
+                if (sceneChanged) {
+                    ecs.setScene(scene);
+                    sceneChanged = false;
+                }
+                if (frameSizeChanged) {
+                    target->setColorAttachments({});
+                    TextureBufferDesc desc;
+                    desc.size = frameSize;
+                    desc.bufferType = HOST_VISIBLE;
+                    texture = device->createTextureBuffer(desc);
+                    target->setColorAttachments({*texture});
+                    frameSizeChanged = false;
+                }
+                ecs.update(deltaTime);
+                frame = texture->download();
+                /*   } catch (...) {
+                       {
+                           std::lock_guard<std::mutex> guard(mutex);
+                           exception = std::current_exception();
+                       }
+                       shutdown = true;
+                       std::rethrow_exception(exception);
+                   }*/
 
                 auto frameEnd = std::chrono::high_resolution_clock::now();
                 auto frameDelta = frameEnd - frameStart;
@@ -200,7 +199,6 @@ namespace xng {
         std::unique_ptr<FontDriver> fontDriver;
 
         std::unique_ptr<Window> window;
-        std::unique_ptr<GpuDriver> gpu;
 
         std::unique_ptr<RenderDevice> device;
         std::unique_ptr<RenderTarget> target;
