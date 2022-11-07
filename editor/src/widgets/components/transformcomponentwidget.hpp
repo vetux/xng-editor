@@ -56,6 +56,7 @@ public:
         transform = value;
         parentWidget->setText(transform.parent.c_str());
         transformWidget->set(transform.transform);
+        headerCheckBox->setChecked(transform.enabled);
     }
 
     const TransformComponent &get() const {
@@ -64,6 +65,12 @@ public:
 
     virtual std::type_index getType() override {
         return typeid(TransformComponentWidget);
+    }
+
+protected:
+    void checkBoxStateChange(int state) override {
+        transform.enabled = state == Qt::Checked;
+        emit valueChanged(transform);
     }
 
 signals:

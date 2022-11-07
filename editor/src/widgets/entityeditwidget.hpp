@@ -118,10 +118,6 @@ public:
             }
 
             if (entity.checkComponent<AudioSourceComponent>()) {
-                auto *widget = new ComponentWidget(this);
-                widget->setTitle("Audio Source");
-                addComponentWidget(widget);
-                components[typeid(AudioSourceComponent)] = widget;
             }
 
             if (entity.checkComponent<TransformComponent>()) {

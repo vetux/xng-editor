@@ -47,16 +47,24 @@ public:
         headerDestroyButton->setText("Destroy");
 
         auto *lay = new QHBoxLayout;
-        header->setLayout(lay);
+        lay->setMargin(0);
+        lay->addWidget(headerCheckBox);
         lay->addWidget(headerText, 1);
-        header->layout()->addWidget(headerDestroyButton);
-        header->layout()->addWidget(headerCheckBox);
+        lay->addWidget(headerDestroyButton);
+
+        lay->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
+        header->setLayout(lay);
 
         setLayout(new QVBoxLayout);
 
         layout()->addWidget(header);
 
-        connect(headerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(stateChanged(int)));
+        auto font = headerText->font();
+        font.setBold(true);
+        headerText->setFont(font);
+
+        connect(headerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(checkBoxStateChange(int)));
         connect(headerDestroyButton, SIGNAL(pressed()), this, SIGNAL(destroyPressed()));
     }
 
@@ -78,15 +86,11 @@ public:
 
 signals:
 
-    void checkedChanged(bool enabled);
-
     void destroyPressed();
 
 protected slots:
 
-    void stateChanged(int state) {
-        emit checkedChanged(state == Qt::Checked);
-    };
+    virtual void checkBoxStateChange(int state) = 0;
 
 protected:
     QWidget *header;

@@ -123,6 +123,7 @@ public:
         rectangleWidget->set(transform.rect);
         centerWidget->set(transform.center);
         rotationWidget->setValue(transform.rotation);
+        headerCheckBox->setChecked(transform.enabled);
     }
 
     const CanvasTransformComponent &get() const {
@@ -131,6 +132,12 @@ public:
 
     virtual std::type_index getType() override {
         return typeid(CanvasTransformComponentWidget);
+    }
+
+protected:
+    void checkBoxStateChange(int state) override {
+        transform.enabled = state == Qt::Checked;
+        emit valueChanged(transform);
     }
 
 signals:
