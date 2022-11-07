@@ -306,6 +306,8 @@ public:
         if (component.getType() == typeid(TransformComponent)) {
             auto &tcomp = dynamic_cast<const TransformComponent &>(component);
 
+            auto currentItem = sceneTree->currentItem();
+
             // Re-Add item to appropriate parent
             auto *item = entityItems.at(entity);
             if (item->parent() != nullptr) {
@@ -321,12 +323,15 @@ public:
             } else {
                 sceneTree->addTopLevelItem(item);
             }
+
+            sceneTree->setCurrentItem(currentItem);
         }
         entityEditWidget->setEntity(selectedEntity);
     }
 
     void onComponentDestroy(const EntityHandle &entity, const Component &component) override {
         if (component.getType() == typeid(TransformComponent)) {
+            auto currentItem = sceneTree->currentItem();
             // Re-Add item to top level
             auto *item = entityItems.at(entity);
             if (item->parent() != nullptr) {
@@ -335,6 +340,7 @@ public:
                 sceneTree->takeTopLevelItem(sceneTree->indexOfTopLevelItem(item));
             }
             sceneTree->addTopLevelItem(item);
+            sceneTree->setCurrentItem(currentItem);
         }
         entityEditWidget->setEntity(selectedEntity);
     }
@@ -360,6 +366,8 @@ public:
                 return;
             }
 
+            auto currentItem = sceneTree->currentItem();
+
             // Re-Add item to appropriate parent
             auto *item = entityItems.at(entity);
             if (item->parent() != nullptr) {
@@ -374,6 +382,8 @@ public:
             } else {
                 sceneTree->addTopLevelItem(item);
             }
+
+            sceneTree->setCurrentItem(currentItem);
         }
         entityEditWidget->setEntity(selectedEntity);
     }
