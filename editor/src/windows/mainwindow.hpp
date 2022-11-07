@@ -84,6 +84,8 @@ protected slots:
 
     void openProject();
 
+    void openRecentProject();
+
     void saveProject();
 
     void openProjectSettings();
@@ -97,6 +99,8 @@ protected slots:
     void openBuildSettings();
 
     void shutdown();
+
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     void keyPressEvent(QKeyEvent *event) override;
@@ -117,7 +121,11 @@ private:
 
     void checkUnsavedSceneChanges();
 
+    void addRecentProject(const std::string &path);
+
     void loadRecentProjects();
+
+    void saveRecentProjects();
 
     void updateActions();
 
@@ -146,7 +154,9 @@ private:
 
     Project project;
 
-    std::vector<std::filesystem::path> recentProjects;
+    std::vector<std::string> recentProjects;
+    std::map<QAction *, std::string> recentProjectActions;
+    std::map<std::string, QAction *> recentProjectActionsReverse;
 };
 
 #endif //XEDITOR_MAINWINDOW_HPP

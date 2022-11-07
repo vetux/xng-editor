@@ -108,6 +108,7 @@ MainWindow::MainWindow() : QMainWindow(),
     rootWidget->setLayout(rootLayout);
 
     loadStateFile();
+    loadRecentProjects();
 
     sceneEditWidget->setScene(scene);
     sceneRenderWidget->setScene(scene, sceneMutex);
@@ -183,9 +184,7 @@ MainWindow::MainWindow() : QMainWindow(),
     updateActions();
 }
 
-MainWindow::~MainWindow() {
-    saveStateFile();
-}
+MainWindow::~MainWindow() {}
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     auto &r = ResourceRegistry::getDefaultRegistry();
@@ -272,7 +271,7 @@ void MainWindow::newProject() {
         }
         Project::create(std::filesystem::path(dir.toStdString()),
                         std::filesystem::path(Paths::projectTemplatePath().string()));
-        path.append(Paths::projectSettingsFilename().toStdString());
+        path.append(Paths::projectSettingsFilename().toStdString().c_str());
         loadProject(path);
     }
 }
@@ -287,9 +286,15 @@ void MainWindow::openProject() {
     dialog.setNameFilter(Paths::projectSettingsFilename());
     if (dialog.exec() == QFileDialog::Accepted) {
         auto &file = dialog.selectedFiles().at(0);
-        auto path = std::filesystem::path(file.toStdString());
+        auto path = std::filesystem::path(file.toStdString().c_str());
         loadProject(path);
     }
+}
+
+void MainWindow::openRecentProject() {
+    checkUnsavedSceneChanges();
+    auto *ptr = sender();
+    loadProject(recentProjectActions.at(dynamic_cast<QAction *>(ptr)));
 }
 
 void MainWindow::saveProject() {
@@ -348,26 +353,33 @@ void MainWindow::openBuildSettings() {
 
 void MainWindow::shutdown() {
     checkUnsavedSceneChanges();
+    saveStateFile();
     close();
 }
 
 void MainWindow::loadStateFile() {
     auto path = Paths::stateFilePath();
     if (std::filesystem::exists(path)) {
-        std::ifstream fs(path.string());
-        if (fs.good()) {
-            JsonProtocol jsonProtocol;
-            auto msg = jsonProtocol.deserialize(fs);
+        try {
+            std::ifstream fs(path.string());
+            if (fs.good()) {
+                JsonProtocol jsonProtocol;
+                auto msg = jsonProtocol.deserialize(fs);
 
-            std::string dec;
-            dec = msg.at("leftSplitter").asString();
-            leftSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
-            dec = msg.at("rightSplitter").asString();
-            rightSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
-            dec = msg.at("middleSplitter").asString();
-            middleSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
-            dec = msg.at("sceneEditSplitter").asString();
-            sceneEditWidget->restoreSplitterState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+                std::string dec;
+                dec = msg.at("leftSplitter").asString();
+                leftSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+                dec = msg.at("rightSplitter").asString();
+                rightSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+                dec = msg.at("middleSplitter").asString();
+                middleSplitter->restoreState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+                dec = msg.at("sceneEditSplitter").asString();
+                sceneEditWidget->restoreSplitterState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
+            }
+        } catch (const std::exception &e) {
+            QMessageBox::warning(this,
+                                 "Failed to load state",
+                                 QString(e.what()));
         }
     }
 }
@@ -379,9 +391,15 @@ void MainWindow::saveStateFile() {
     msg["middleSplitter"] = middleSplitter->saveState().toBase64().toStdString();
     msg["sceneEditSplitter"] = sceneEditWidget->saveSplitterState().toBase64().toStdString();
 
-    std::ofstream fs(Paths::stateFilePath().string());
-    JsonProtocol jsonProtocol;
-    jsonProtocol.serialize(fs, msg);
+    try {
+        std::ofstream fs(Paths::stateFilePath().string());
+        JsonProtocol jsonProtocol;
+        jsonProtocol.serialize(fs, msg);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this,
+                             "Failed to save state",
+                             QString(e.what()));
+    }
 }
 
 void MainWindow::loadScene(const std::filesystem::path &path) {
@@ -417,13 +435,16 @@ void MainWindow::loadProject(const std::filesystem::path &path) {
     try {
         project.load(path.parent_path());
         setWindowTitle(project.getSettings().name.c_str());
-        QMessageBox::information(this, "Project opened", ("Successfully opened " + project.getSettings().name).c_str());
+        QMessageBox::information(this, "Project opened",
+                                 ("Successfully opened " + project.getSettings().name).c_str());
         projectSaved = true;
         updateActions();
+        addRecentProject(path.string());
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Project load failed",
-                             ("Failed to load project at " + QString(path.string().c_str()) + " Error: " + e.what()));
+                             ("Failed to load project at " + QString(path.string().c_str()) + " Error: " +
+                              e.what()));
     }
 }
 
@@ -450,10 +471,84 @@ void MainWindow::checkUnsavedSceneChanges() {
     }
 }
 
-void MainWindow::loadRecentProjects() {
+void MainWindow::addRecentProject(const std::string &path) {
+    auto it = std::find(recentProjects.begin(), recentProjects.end(), path);
+    if (it != recentProjects.end()) {
+        auto *action = recentProjectActionsReverse.at(path);
+        disconnect(action);
+        actions.projectOpenRecentMenu->removeAction(action);
+        recentProjects.erase(it);
+        recentProjectActionsReverse.erase(path);
+    }
+    recentProjects.insert(recentProjects.begin(), path);
+    auto *action = new QAction(path.c_str(), this);
+    actions.projectOpenRecentMenu->insertAction(actions.projectOpenRecentMenu->actionAt({0, 0}), action);
+    connect(action, SIGNAL(triggered(bool)), this, SLOT(openRecentProject()));
+    recentProjectActions[action] = path;
+    recentProjectActionsReverse[path] = action;
+    saveRecentProjects();
+}
 
+void MainWindow::loadRecentProjects() {
+    for (auto &pair: recentProjectActions) {
+        disconnect(pair.first);
+    }
+    recentProjectActions.clear();
+    recentProjects.clear();
+    auto path = Paths::recentProjectsPath();
+    if (std::filesystem::exists(path)) {
+        auto prot = xng::JsonProtocol();
+        try {
+            std::ifstream fs(path.string());
+            auto msg = prot.deserialize(fs);
+            for (auto &v: msg.asList()) {
+                auto p = std::filesystem::path(v.asString());
+                if (std::filesystem::exists(p)) {
+                    recentProjects.emplace_back(v.asString());
+                }
+            }
+        } catch (const std::exception &e) {
+            QMessageBox::warning(this,
+                                 "Failed to load recent projects",
+                                 QString(e.what()));
+        }
+    }
+    for (auto &p: recentProjects) {
+        auto *action = new QAction(p.c_str(), this);
+        actions.projectOpenRecentMenu->addAction(action);
+        connect(action, SIGNAL(triggered(bool)), this, SLOT(openRecentProject()));
+        recentProjectActions[action] = p;
+        recentProjectActionsReverse[p] = action;
+    }
+}
+
+void MainWindow::saveRecentProjects() {
+    std::vector<Message> vec;
+    for (auto &path: recentProjects) {
+        Message m;
+        m = path;
+        vec.emplace_back(m);
+    }
+
+    Message msg = Message(vec);
+
+    auto path = Paths::recentProjectsPath();
+
+    auto prot = xng::JsonProtocol();
+    try {
+        std::ofstream fs(path.string());
+        prot.serialize(fs, msg);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this,
+                             "Failed to save recent projects",
+                             QString(e.what()));
+    }
 }
 
 void MainWindow::updateActions() {
     actions.projectSaveAction->setEnabled(project.isLoaded() && (!sceneSaved || !projectSaved));
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+    shutdown();
 }
