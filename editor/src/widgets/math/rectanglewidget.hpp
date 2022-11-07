@@ -37,12 +37,18 @@ public:
 
         auto *line0 = new QWidget(this);
         line0->setLayout(new QHBoxLayout);
+        line0->layout()->setMargin(0);
         line0->layout()->addWidget(positionLabel);
         line0->layout()->addWidget(positionWidget);
         auto *line1 = new QWidget(this);
         line1->setLayout(new QHBoxLayout);
+        line1->layout()->setMargin(0);
         line1->layout()->addWidget(dimensionLabel);
         line1->layout()->addWidget(dimensionWidget);
+
+        setLayout(new QVBoxLayout);
+        layout()->addWidget(line0);
+        layout()->addWidget(line1);
     }
 
     void set(const Rectf &value) {

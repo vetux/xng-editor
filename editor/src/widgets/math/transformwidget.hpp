@@ -48,6 +48,7 @@ public:
 
         auto *line = new QWidget(this);
         line->setLayout(new QHBoxLayout);
+        line->layout()->setMargin(0);
         line->layout()->addWidget(positionLabel);
         line->layout()->addWidget(positionWidget);
 
@@ -55,6 +56,7 @@ public:
 
         line = new QWidget(this);
         line->setLayout(new QHBoxLayout);
+        line->layout()->setMargin(0);
         line->layout()->addWidget(rotationLabel);
         line->layout()->addWidget(rotationWidget);
 
@@ -62,6 +64,7 @@ public:
 
         line = new QWidget(this);
         line->setLayout(new QHBoxLayout);
+        line->layout()->setMargin(0);
         line->layout()->addWidget(scaleLabel);
         line->layout()->addWidget(scaleWidget);
 

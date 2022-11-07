@@ -43,6 +43,7 @@ public:
 
         layout()->addWidget(spinX);
         layout()->addWidget(spinY);
+        layout()->setMargin(0);
     };
 
     void set(const Vec2f &vec) {
