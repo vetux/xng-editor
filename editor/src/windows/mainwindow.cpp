@@ -30,7 +30,7 @@
 
 #include "widgets/entityeditwidget.hpp"
 
-#include "paths.hpp"
+#include "io/paths.hpp"
 
 using namespace xng;
 
@@ -39,16 +39,18 @@ MainWindow::Actions::Actions(QWidget *parent) {
     settingsAction = new QAction("Settings...", parent);
     projectCreateAction = new QAction("New Project...", parent);
     projectOpenAction = new QAction("Open Project...", parent);
+    projectOpenRecentMenu = new QMenu("Open Recent Project...", parent);
     projectSaveAction = new QAction("Save Project", parent);
     projectSettingsAction = new QAction("Project Settings...", parent);
     exitAction = new QAction("Exit", parent);
 
-    fileMenu->addAction(settingsAction);
-    fileMenu->addSeparator();
     fileMenu->addAction(projectCreateAction);
     fileMenu->addAction(projectOpenAction);
+    fileMenu->addMenu(projectOpenRecentMenu);
     fileMenu->addAction(projectSaveAction);
     fileMenu->addAction(projectSettingsAction);
+    fileMenu->addSeparator();
+    fileMenu->addAction(settingsAction);
     fileMenu->addSeparator();
     fileMenu->addAction(exitAction);
 
@@ -177,6 +179,8 @@ MainWindow::MainWindow() : QMainWindow(),
     menuBar()->addMenu(actions.fileMenu);
     menuBar()->addMenu(actions.buildMenu);
     menuBar()->addMenu(actions.sceneMenu);
+
+    updateActions();
 }
 
 MainWindow::~MainWindow() {
@@ -184,6 +188,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
+    auto &r = ResourceRegistry::getDefaultRegistry();
     QWidget::keyPressEvent(event);
 }
 
@@ -202,6 +207,7 @@ void MainWindow::createEntity(const std::string &name) {
     }
     scene->createEntity(name);
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::setEntityName(Entity entity, const std::string &name) {
@@ -211,6 +217,7 @@ void MainWindow::setEntityName(Entity entity, const std::string &name) {
     }
     scene->setEntityName(entity.getHandle(), name);
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::createComponent(Entity entity, std::type_index componentType) {
@@ -221,6 +228,7 @@ void MainWindow::createComponent(Entity entity, std::type_index componentType) {
     } else {
         scene->createComponent(entity.getHandle(), componentType);
         sceneSaved = false;
+        updateActions();
     }
 }
 
@@ -234,6 +242,7 @@ void MainWindow::destroyComponent(Entity entity, std::type_index type) {
     std::lock_guard<std::mutex> guard(*sceneMutex);
     scene->destroyComponent(entity.getHandle(), type);
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::openSettings() {
@@ -248,9 +257,23 @@ void MainWindow::newProject() {
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setFileMode(QFileDialog::Directory);
     if (dialog.exec() == QFileDialog::Accepted) {
-        auto &dir = dialog.selectedFiles().at(0);
+        auto dir = dialog.selectedFiles().at(0);
+        auto path = std::filesystem::path(dir.toStdString());
+        if (!std::filesystem::is_empty(path)) {
+            if (QMessageBox::question(this, "Overwrite Existing files", ("Directory " + path.string() +
+                                                                         " is not empty, do you wish to overwrite the existing contents?").c_str())
+                != QMessageBox::Yes) {
+                QMessageBox::information(this, "Cancelled", "The project creation was cancelled.");
+                return;
+            } else {
+                for (const auto &entry: std::filesystem::directory_iterator(path))
+                    std::filesystem::remove_all(entry.path());
+            }
+        }
         Project::create(std::filesystem::path(dir.toStdString()),
-                        std::filesystem::path(Paths::getProjectTemplateDirectory().toStdString()));
+                        std::filesystem::path(Paths::projectTemplatePath().string()));
+        path.append(Paths::projectSettingsFilename().toStdString());
+        loadProject(path);
     }
 }
 
@@ -261,20 +284,19 @@ void MainWindow::openProject() {
     dialog.setWindowTitle("Select project to open...");
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setFileMode(QFileDialog::AnyFile);
-    dialog.setNameFilter("project-settings.json");
+    dialog.setNameFilter(Paths::projectSettingsFilename());
     if (dialog.exec() == QFileDialog::Accepted) {
         auto &file = dialog.selectedFiles().at(0);
         auto path = std::filesystem::path(file.toStdString());
-        project = Project(path.parent_path());
-        scene = std::make_shared<EntityScene>();
-        sceneEditWidget->setScene(scene);
-        sceneRenderWidget->setScene(scene, sceneMutex);
+        loadProject(path);
     }
 }
 
 void MainWindow::saveProject() {
     saveScene();
     project.save();
+    projectSaved = true;
+    updateActions();
 }
 
 void MainWindow::openProjectSettings() {
@@ -330,8 +352,9 @@ void MainWindow::shutdown() {
 }
 
 void MainWindow::loadStateFile() {
-    try {
-        std::ifstream fs("state.json");
+    auto path = Paths::stateFilePath();
+    if (std::filesystem::exists(path)) {
+        std::ifstream fs(path.string());
         if (fs.good()) {
             JsonProtocol jsonProtocol;
             auto msg = jsonProtocol.deserialize(fs);
@@ -346,7 +369,7 @@ void MainWindow::loadStateFile() {
             dec = msg.at("sceneEditSplitter").asString();
             sceneEditWidget->restoreSplitterState(QByteArray::fromBase64(QByteArray::fromStdString(dec)));
         }
-    } catch (const std::exception &e) {}
+    }
 }
 
 void MainWindow::saveStateFile() {
@@ -356,16 +379,22 @@ void MainWindow::saveStateFile() {
     msg["middleSplitter"] = middleSplitter->saveState().toBase64().toStdString();
     msg["sceneEditSplitter"] = sceneEditWidget->saveSplitterState().toBase64().toStdString();
 
-    std::ofstream fs("state.json");
+    std::ofstream fs(Paths::stateFilePath().string());
     JsonProtocol jsonProtocol;
     jsonProtocol.serialize(fs, msg);
 }
 
-void MainWindow::loadScene(const std::string &path) {
-    std::lock_guard<std::mutex> guard(*sceneMutex);
-    auto prot = JsonProtocol();
-    std::ifstream fs(path);
-    *scene << prot.deserialize(fs);
+void MainWindow::loadScene(const std::filesystem::path &path) {
+    try {
+        std::lock_guard<std::mutex> guard(*sceneMutex);
+        auto prot = JsonProtocol();
+        std::ifstream fs(path.string());
+        *scene << prot.deserialize(fs);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this,
+                             "Scene load failed",
+                             ("Failed to load scene at " + QString(path.string().c_str()) + " Error: " + e.what()));
+    }
 }
 
 void MainWindow::saveScene() {
@@ -377,18 +406,54 @@ void MainWindow::saveScene() {
         std::ofstream fs(scenePath.string());
         p.serialize(fs, msg);
         sceneSaved = true;
+        updateActions();
+    }
+}
+
+void MainWindow::loadProject(const std::filesystem::path &path) {
+    scene = std::make_shared<EntityScene>();
+    sceneEditWidget->setScene(scene);
+    sceneRenderWidget->setScene(scene, sceneMutex);
+    try {
+        project.load(path.parent_path());
+        setWindowTitle(project.getSettings().name.c_str());
+        QMessageBox::information(this, "Project opened", ("Successfully opened " + project.getSettings().name).c_str());
+        projectSaved = true;
+        updateActions();
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this,
+                             "Project load failed",
+                             ("Failed to load project at " + QString(path.string().c_str()) + " Error: " + e.what()));
     }
 }
 
 void MainWindow::checkUnsavedSceneChanges() {
-    if (!sceneSaved
-        && !scenePath.empty()) {
+    if (!sceneSaved) {
         if (QMessageBox::question(this,
                                   "Unsaved Scene Changes",
                                   "Your scene has unsaved changes, do you want to save the scene?")
-            == QMessageBox::Ok) {
+            == QMessageBox::Yes) {
+            if (scenePath.empty()) {
+                QFileDialog dialog;
+                dialog.setAcceptMode(QFileDialog::AcceptSave);
+                dialog.setFileMode(QFileDialog::AnyFile);
+                dialog.setMimeTypeFilters({"application/json"});
+                if (dialog.exec() == QFileDialog::Accepted) {
+                    auto file = dialog.selectedFiles().at(0);
+                    scenePath = file.toStdString();
+                } else {
+                    return;
+                }
+            }
             saveScene();
         }
     }
 }
 
+void MainWindow::loadRecentProjects() {
+
+}
+
+void MainWindow::updateActions() {
+    actions.projectSaveAction->setEnabled(project.isLoaded() && (!sceneSaved || !projectSaved));
+}

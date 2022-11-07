@@ -20,8 +20,13 @@
 #include "project/project.hpp"
 
 #include "xng/asset/scene.hpp"
+#include "xng/io/protocol/jsonprotocol.hpp"
+#include "xng/io/archive/directoryarchive.hpp"
 
 #include <filesystem>
+#include <fstream>
+
+#include "io/paths.hpp"
 
 void Project::create(const std::filesystem::path &outputDir, const std::filesystem::path &templateDir) {
     if (!std::filesystem::is_empty(outputDir)) {
@@ -30,8 +35,48 @@ void Project::create(const std::filesystem::path &outputDir, const std::filesyst
     std::filesystem::copy(templateDir, outputDir);
 }
 
-Project::Project(const std::filesystem::path &dir) {
+void Project::load(const std::filesystem::path &file) {
+    unload();
+
     // Read and deserialize the settings object
+    auto settingsFile = file;
+    settingsFile.append(Paths::projectSettingsFilename().toStdString());
+    if (!std::filesystem::exists(settingsFile)) {
+        throw std::runtime_error("Settings file " + settingsFile.string() + " not found.");
+    }
+    auto prot = xng::JsonProtocol();
+    std::ifstream fs(settingsFile.string());
+    auto msg = prot.deserialize(fs);
+    settings = {};
+    settings << msg;
+
+    directory = file.parent_path();
+
+    // Create and register asset bundle archives
+    for (auto &bundle: settings.assetBundles) {
+        auto bundleDir = directory;
+        bundleDir.append(bundle.directory.string());
+        ResourceRegistry::getDefaultRegistry().addArchive(bundle.scheme,
+                                                          std::make_shared<xng::DirectoryArchive>(bundleDir));
+    }
+}
+
+bool Project::unload() {
+    if (directory.empty()) {
+        return false;
+    } else {
+        // Remove asset bundle archives
+        for (auto &bundle: settings.assetBundles) {
+            ResourceRegistry::getDefaultRegistry().removeArchive(bundle.scheme);
+        }
+        directory = std::filesystem::path();
+        settings = {};
+        return true;
+    }
+}
+
+bool Project::isLoaded() {
+    return !directory.empty();
 }
 
 void Project::compile(const BuildSettings &settings) const {

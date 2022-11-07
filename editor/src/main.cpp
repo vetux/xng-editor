@@ -22,6 +22,10 @@
 #include "windows/mainwindow.hpp"
 
 int main(int argc, char *argv[]) {
+    QApplication::setApplicationName("xeditor");
+    QApplication::setApplicationDisplayName("xEditor");
+    QApplication::setApplicationVersion("v0.0.1");
+
     QApplication app(argc, argv);
     MainWindow win;
     win.show();

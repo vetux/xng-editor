@@ -46,6 +46,7 @@ public:
         QAction *settingsAction;
         QAction *projectCreateAction;
         QAction *projectOpenAction;
+        QMenu *projectOpenRecentMenu;
         QAction *projectSaveAction;
         QAction *projectSettingsAction;
         QAction *exitAction;
@@ -108,11 +109,17 @@ private:
 
     void saveStateFile();
 
-    void loadScene(const std::string &path);
+    void loadScene(const std::filesystem::path &path);
 
     void saveScene();
 
+    void loadProject(const std::filesystem::path &path);
+
     void checkUnsavedSceneChanges();
+
+    void loadRecentProjects();
+
+    void updateActions();
 
     QWidget *rootWidget;
     QHBoxLayout *rootLayout;
@@ -132,11 +139,14 @@ private:
     std::shared_ptr<std::mutex> sceneMutex;
     std::shared_ptr<xng::EntityScene> scene;
 
-    bool sceneSaved = false;
+    bool sceneSaved = true;
+    bool projectSaved = true;
 
     Actions actions;
 
     Project project;
+
+    std::vector<std::filesystem::path> recentProjects;
 };
 
 #endif //XEDITOR_MAINWINDOW_HPP

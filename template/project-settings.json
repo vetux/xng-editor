@@ -1,6 +1,6 @@
 {
   "name": "New Project",
-  "bundles": [
+  "assetBundles": [
     {
       "name": "Assets",
       "scheme": "assets",

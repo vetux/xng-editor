@@ -129,37 +129,36 @@ namespace xng {
             auto lastFrame = std::chrono::high_resolution_clock::now();
             DeltaTime deltaTime = 0;
             while (!shutdown) {
-                //   try {
-                ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
-                std::lock_guard<std::mutex> guard(mutex);
-                std::lock_guard<std::mutex> sGuard(*sceneMutex);
-                if (layoutChanged) {
-                    frameGraphRenderer->setLayout(layout);
-                    layoutChanged = false;
+                try {
+                    ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
+                    std::lock_guard<std::mutex> guard(mutex);
+                    std::lock_guard<std::mutex> sGuard(*sceneMutex);
+                    if (layoutChanged) {
+                        frameGraphRenderer->setLayout(layout);
+                        layoutChanged = false;
+                    }
+                    if (sceneChanged) {
+                        ecs.setScene(scene);
+                        sceneChanged = false;
+                    }
+                    if (frameSizeChanged) {
+                        target->setColorAttachments({});
+                        TextureBufferDesc desc;
+                        desc.size = frameSize;
+                        desc.bufferType = HOST_VISIBLE;
+                        texture = device->createTextureBuffer(desc);
+                        target->setColorAttachments({*texture});
+                        frameSizeChanged = false;
+                    }
+                    ecs.update(deltaTime);
+                    frame = texture->download();
+                } catch (...) {
+                    {
+                        std::lock_guard<std::mutex> guard(mutex);
+                        exception = std::current_exception();
+                    }
+                    std::rethrow_exception(exception);
                 }
-                if (sceneChanged) {
-                    ecs.setScene(scene);
-                    sceneChanged = false;
-                }
-                if (frameSizeChanged) {
-                    target->setColorAttachments({});
-                    TextureBufferDesc desc;
-                    desc.size = frameSize;
-                    desc.bufferType = HOST_VISIBLE;
-                    texture = device->createTextureBuffer(desc);
-                    target->setColorAttachments({*texture});
-                    frameSizeChanged = false;
-                }
-                ecs.update(deltaTime);
-                frame = texture->download();
-                /*   } catch (...) {
-                       {
-                           std::lock_guard<std::mutex> guard(mutex);
-                           exception = std::current_exception();
-                       }
-                       shutdown = true;
-                       std::rethrow_exception(exception);
-                   }*/
 
                 auto frameEnd = std::chrono::high_resolution_clock::now();
                 auto frameDelta = frameEnd - frameStart;

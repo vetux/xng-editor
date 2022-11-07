@@ -40,12 +40,25 @@ public:
     Project() = default;
 
     /**
-     * Load an existing project from a directory.
-     * The directory must contain dir/project-settings.json.
+     * Load the project in the specified directory.
+     * Unsaved changes in the current project are discarded.
+     *
+     * Calls unload() before loading the new project.
+     *
+     * While the project is loaded the asset bundles are available on the resource registry of the editor.
      *
      * @param dir
      */
-    explicit Project(const std::filesystem::path &dir);
+    void load(const std::filesystem::path &dir);
+
+    /**
+     * Unload the currently loaded project.
+     *
+     * @return True if a project was loaded and has been unloaded otherwise false
+     */
+    bool unload();
+
+    bool isLoaded();
 
     /**
      * Compile the project using the specified settings
