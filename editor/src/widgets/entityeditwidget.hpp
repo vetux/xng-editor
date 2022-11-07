@@ -46,13 +46,14 @@ public:
 
         auto *widget = new QWidget(this);
         widget->setLayout(new QHBoxLayout);
+        widget->layout()->setMargin(0);
 
-        headerText = new QLineEdit(this);
+        entityNameEdit = new QLineEdit(this);
 
         destroyEntityButton = new QPushButton(this);
         destroyEntityButton->setText("Destroy");
 
-        widget->layout()->addWidget(headerText);
+        widget->layout()->addWidget(entityNameEdit);
         widget->layout()->addWidget(destroyEntityButton);
 
         componentParent = new QWidget();
@@ -67,14 +68,13 @@ public:
         addComponentButton->setText("Add Component");
 
         auto *addCompLayout = new QHBoxLayout;
-
-        addCompLayout->addWidget(new QWidget, 1);
-        addCompLayout->addWidget(addComponentButton, 1);
-        addCompLayout->addWidget(new QWidget, 1);
+        addCompLayout->addWidget(addComponentButton);
+        addCompLayout->setAlignment(Qt::AlignCenter);
 
         addComponentContainer->setLayout(addCompLayout);
 
         auto *compLayout = new QVBoxLayout;
+        compLayout->setMargin(0);
         compLayout->setSpacing(0);
 
         compLayout->addWidget(addComponentContainer);
@@ -89,77 +89,83 @@ public:
 
         connect(destroyEntityButton, SIGNAL(pressed()), this, SLOT(destroyEntityPressed()));
         connect(addComponentButton, SIGNAL(pressed()), this, SIGNAL(addComponent()));
- }
+        connect(entityNameEdit, SIGNAL(textEdited(const QString &)), this, SIGNAL(updateEntityName(const QString &)));
 
-    void setEntity(xng::Entity value) {
-        setEnabled(true);
-
-        entity = value;
-        for (auto &pair: components) {
-            layout()->removeWidget(pair.second);
-            pair.second->deleteLater();
-        }
-        components.clear();
-
-        componentParent->layout()->removeWidget(spacerWidget);
-        componentParent->layout()->removeWidget(addComponentContainer);
-
-        if (value.hasName())
-            headerText->setText(value.getName().c_str());
-
-        if (entity.checkComponent<AudioListenerComponent>()){
-
-        }
-
-        if (entity.checkComponent<AudioSourceComponent>()) {
-            auto *widget = new ComponentWidget(this);
-            widget->setTitle("Audio Source");
-            addComponentWidget(widget);
-            components[typeid(AudioSourceComponent)] = widget;
-        }
-
-        if (entity.checkComponent<TransformComponent>()) {
-            auto *widget = new TransformComponentWidget(this);
-            widget->set(value.getComponent<TransformComponent>());
-            connect(widget,
-                    SIGNAL(destroyPressed()),
-                    this,
-                    SLOT(destroyPressed()));
-            connect(widget, SIGNAL(valueChanged(const TransformComponent &)), this,
-                    SLOT(valueChanged(const TransformComponent &)));
-            addComponentWidget(widget);
-            components[typeid(TransformComponent)] = widget;
-        }
-
-        if (entity.checkComponent<CanvasTransformComponent>()) {
-            auto *widget = new CanvasTransformComponentWidget(this);
-            widget->set(value.getComponent<CanvasTransformComponent>());
-            connect(widget,
-                    SIGNAL(destroyPressed()),
-                    this,
-                    SLOT(destroyPressed()));
-            connect(widget, SIGNAL(valueChanged(const CanvasTransformComponent &)), this,
-                    SLOT(valueChanged(const CanvasTransformComponent &)));
-            addComponentWidget(widget);
-            components[typeid(CanvasTransformComponent)] = widget;
-        }
-
-        componentParent->layout()->addWidget(addComponentContainer);
-
-        auto *lay = (QVBoxLayout *) componentParent->layout();
-        lay->addWidget(spacerWidget, 1);
-
-        componentScroll->update();
+        setEntity({});
     }
 
-    void clearEntity() {
-        entity = {};
-        for (auto &pair: components) {
-            layout()->removeWidget(pair.second);
-            pair.second->deleteLater();
+    void setEntity(xng::Entity value) {
+        if (value) {
+            setEnabled(true);
+
+            entity = value;
+            for (auto &pair: components) {
+                layout()->removeWidget(pair.second);
+                pair.second->deleteLater();
+            }
+            components.clear();
+
+            componentParent->layout()->removeWidget(spacerWidget);
+            componentParent->layout()->removeWidget(addComponentContainer);
+
+            if (value.hasName())
+                entityNameEdit->setText(value.getName().c_str());
+            else
+                entityNameEdit->setText("Unnamed Entity");
+
+            if (entity.checkComponent<AudioListenerComponent>()) {
+
+            }
+
+            if (entity.checkComponent<AudioSourceComponent>()) {
+                auto *widget = new ComponentWidget(this);
+                widget->setTitle("Audio Source");
+                addComponentWidget(widget);
+                components[typeid(AudioSourceComponent)] = widget;
+            }
+
+            if (entity.checkComponent<TransformComponent>()) {
+                auto *widget = new TransformComponentWidget(this);
+                widget->set(value.getComponent<TransformComponent>());
+                connect(widget,
+                        SIGNAL(destroyPressed()),
+                        this,
+                        SLOT(destroyPressed()));
+                connect(widget, SIGNAL(valueChanged(const TransformComponent &)), this,
+                        SLOT(valueChanged(const TransformComponent &)));
+                addComponentWidget(widget);
+                components[typeid(TransformComponent)] = widget;
+            }
+
+            if (entity.checkComponent<CanvasTransformComponent>()) {
+                auto *widget = new CanvasTransformComponentWidget(this);
+                widget->set(value.getComponent<CanvasTransformComponent>());
+                connect(widget,
+                        SIGNAL(destroyPressed()),
+                        this,
+                        SLOT(destroyPressed()));
+                connect(widget, SIGNAL(valueChanged(const CanvasTransformComponent &)), this,
+                        SLOT(valueChanged(const CanvasTransformComponent &)));
+                addComponentWidget(widget);
+                components[typeid(CanvasTransformComponent)] = widget;
+            }
+
+            componentParent->layout()->addWidget(addComponentContainer);
+
+            auto *lay = (QVBoxLayout *) componentParent->layout();
+            lay->addWidget(spacerWidget, 1);
+
+            componentScroll->update();
+        } else {
+            entity = {};
+            for (auto &pair: components) {
+                layout()->removeWidget(pair.second);
+                pair.second->deleteLater();
+            }
+            components.clear();
+            entityNameEdit->clear();
+            setEnabled(false);
         }
-        components.clear();
-        setEnabled(false);
     }
 
     const Entity &getEntity() const {
@@ -174,7 +180,7 @@ signals:
 
     void destroyComponent(std::type_index componentType);
 
-    void updateEntityName(const std::string &name);
+    void updateEntityName(const QString &name);
 
     void destroyEntity();
 
@@ -231,7 +237,7 @@ private:
 
     xng::Entity entity;
 
-    QLineEdit *headerText;
+    QLineEdit *entityNameEdit;
 
     std::map<std::type_index, ComponentWidget *> components;
 

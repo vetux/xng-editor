@@ -114,25 +114,33 @@ MainWindow::MainWindow() : QMainWindow(),
     sceneRenderWidget->setScene(scene, sceneMutex);
 
     connect(sceneEditWidget,
+            SIGNAL(createEntity()),
+            this,
+            SLOT(createEntity()));
+    connect(sceneEditWidget,
             SIGNAL(createEntity(const std::string &)),
             this,
             SLOT(createEntity(const std::string &)));
     connect(sceneEditWidget,
-            SIGNAL(setEntityName(Entity, const std::string &)),
+            SIGNAL(destroyEntity(const Entity &)),
             this,
-            SLOT(setEntityName(Entity, const std::string &)));
+            SLOT(destroyEntity(const Entity &)));
     connect(sceneEditWidget,
-            SIGNAL(createComponent(Entity, std::type_index)),
+            SIGNAL(setEntityName(const Entity &, const std::string &)),
             this,
-            SLOT(createComponent(Entity, std::type_index)));
+            SLOT(setEntityName(const Entity &, const std::string &)));
     connect(sceneEditWidget,
-            SIGNAL(updateComponent(Entity, const Component &)),
+            SIGNAL(createComponent(const Entity &, std::type_index)),
             this,
-            SLOT(updateComponent(Entity, const Component &)));
+            SLOT(createComponent(const Entity &, std::type_index)));
     connect(sceneEditWidget,
-            SIGNAL(destroyComponent(Entity, std::type_index)),
+            SIGNAL(updateComponent(const Entity &, const Component &)),
             this,
-            SLOT(destroyComponent(Entity, std::type_index)));
+            SLOT(updateComponent(const Entity &, const Component &)));
+    connect(sceneEditWidget,
+            SIGNAL(destroyComponent(const Entity &, std::type_index)),
+            this,
+            SLOT(destroyComponent(const Entity &, std::type_index)));
 
     connect(actions.settingsAction,
             SIGNAL(triggered(bool)),
@@ -199,27 +207,92 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
     QWidget::mousePressEvent(event);
 }
 
+void MainWindow::createEntity() {
+    std::lock_guard<std::mutex> guard(*sceneMutex);
+    auto selectedEntity = sceneEditWidget->getSelectedEntity();
+    auto ent = scene->createEntity();
+    TransformComponent comp;
+    if (selectedEntity) {
+        if (selectedEntity.hasName()) {
+            comp.parent = selectedEntity.getName();
+        }
+    }
+    ent.createComponent<>(comp);
+    sceneSaved = false;
+    updateActions();
+}
+
 void MainWindow::createEntity(const std::string &name) {
     std::lock_guard<std::mutex> guard(*sceneMutex);
+    auto selectedEntity = sceneEditWidget->getSelectedEntity();
     if (scene->entityNameExists(name)) {
         QMessageBox::warning(this, "Cannot Create Entity", ("Entity with name " + name + " already exists").c_str());
     }
-    scene->createEntity(name);
+    auto ent = scene->createEntity(name);
+    TransformComponent comp;
+    if (selectedEntity) {
+        if (selectedEntity.hasName()) {
+            comp.parent = selectedEntity.getName();
+        }
+    }
+    ent.createComponent<>(comp);
     sceneSaved = false;
     updateActions();
 }
 
-void MainWindow::setEntityName(Entity entity, const std::string &name) {
+static std::vector<EntityHandle>
+destroyRecursive(const EntityHandle &ent, const std::string &name, EntityScene &scene) {
+    std::vector<EntityHandle> ret;
+    for (auto &pair: scene.getPool<TransformComponent>()) {
+        if (pair.first == ent)
+            continue;
+        if (pair.second.parent == name) {
+            if (scene.entityHasName(pair.first)) {
+                auto v = destroyRecursive(pair.first, scene.getEntityName(pair.first), scene);
+                ret.insert(ret.end(), v.begin(), v.end());
+            } else {
+                ret.emplace_back(pair.first);
+            }
+        }
+    }
+    ret.emplace_back(ent);
+    return ret;
+}
+
+void MainWindow::destroyEntity(const Entity &entity) {
+    if (QMessageBox::question(this, "Destroy Entity",
+                              entity.hasName()
+                              ? "Do you want to destroy " + QString(entity.getName().c_str()) + " ?"
+                              : "Do you want to destroy the entity: " + QString(entity.getHandle().toString().c_str()) +
+                                " ?")
+        != QMessageBox::Yes) {
+        return;
+    }
+    std::lock_guard<std::mutex> guard(*sceneMutex);
+    if (entity.hasName()) {
+        auto vec = destroyRecursive(entity.getHandle(), entity.getName(), *scene);
+        for (auto &v: vec) {
+            scene->destroy(v);
+        }
+    } else {
+        scene->destroy(entity.getHandle());
+    }
+    sceneSaved = false;
+    updateActions();
+}
+
+void MainWindow::setEntityName(const Entity &entity, const std::string &name) {
     std::lock_guard<std::mutex> guard(*sceneMutex);
     if (scene->entityNameExists(name)) {
         QMessageBox::warning(this, "Cannot Set Entity Name", ("Entity with name " + name + " already exists").c_str());
+    } else {
+        scene->setEntityName(entity.getHandle(), name);
+        sceneSaved = false;
+        updateActions();
     }
-    scene->setEntityName(entity.getHandle(), name);
-    sceneSaved = false;
-    updateActions();
 }
 
-void MainWindow::createComponent(Entity entity, std::type_index componentType) {
+void MainWindow::createComponent(const Entity &entity, std::type_index componentType) {
     std::lock_guard<std::mutex> guard(*sceneMutex);
     if (scene->checkComponent(entity.getHandle(), componentType)) {
         QMessageBox::warning(this, "Cannot Create Component",
@@ -231,13 +304,13 @@ void MainWindow::createComponent(Entity entity, std::type_index componentType) {
     }
 }
 
-void MainWindow::updateComponent(Entity entity, const Component &value) {
+void MainWindow::updateComponent(const Entity &entity, const Component &value) {
     std::lock_guard<std::mutex> guard(*sceneMutex);
     scene->updateComponent(entity.getHandle(), value);
     sceneSaved = false;
 }
 
-void MainWindow::destroyComponent(Entity entity, std::type_index type) {
+void MainWindow::destroyComponent(const Entity &entity, std::type_index type) {
     std::lock_guard<std::mutex> guard(*sceneMutex);
     scene->destroyComponent(entity.getHandle(), type);
     sceneSaved = false;
@@ -452,7 +525,7 @@ void MainWindow::checkUnsavedSceneChanges() {
     if (!sceneSaved) {
         if (QMessageBox::question(this,
                                   "Unsaved Scene Changes",
-                                  "Your scene has unsaved changes, do you want to save the scene?")
+                                  "Your scene has unsaved changes, do you want to save them now?")
             == QMessageBox::Yes) {
             if (scenePath.empty()) {
                 QFileDialog dialog;

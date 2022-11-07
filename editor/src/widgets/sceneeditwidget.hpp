@@ -38,11 +38,11 @@
 class SceneEditWidget : public QWidget, public EntityScene::Listener {
 Q_OBJECT
 public:
-    //TODO: QTreeWidget entities display
     explicit SceneEditWidget(QWidget *parent)
             : QWidget(parent) {
         splitter = new QSplitter(this);
         sceneTree = new QTreeWidget(this);
+        sceneTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
         entityEditWidget = new EntityEditWidget(this);
 
         setLayout(new QHBoxLayout);
@@ -53,6 +53,9 @@ public:
 
         sceneTree->headerItem()->setHidden(true);
         layout()->setMargin(0);
+
+        sceneTree->setContextMenuPolicy(Qt::CustomContextMenu);
+        sceneTree->viewport()->installEventFilter(this);
 
         connect(entityEditWidget, SIGNAL(addComponent()), this, SLOT(addComponent()));
         connect(entityEditWidget,
@@ -67,6 +70,18 @@ public:
                 SIGNAL(destroyEntity()),
                 this,
                 SLOT(destroyEntity()));
+        connect(entityEditWidget,
+                SIGNAL(updateEntityName(const QString &)),
+                this,
+                SLOT(updateEntityName(const QString &)));
+        connect(sceneTree,
+                SIGNAL(currentItemChanged(QTreeWidgetItem * , QTreeWidgetItem * )),
+                this,
+                SLOT(currentItemChanged(QTreeWidgetItem * , QTreeWidgetItem * )));
+        connect(sceneTree,
+                SIGNAL(customContextMenuRequested(const QPoint &)),
+                this,
+                SLOT(contextMenuRequested(const QPoint &)));
     }
 
     ~SceneEditWidget() override {
@@ -82,9 +97,10 @@ public:
         scene = std::move(value);
 
         scene->addListener(*this);
+    }
 
-        auto ent = scene->createEntity();
-        selectEntity(ent);
+    const Entity &getSelectedEntity() const {
+        return selectedEntity;
     }
 
     QByteArray saveSplitterState() const {
@@ -97,17 +113,19 @@ public:
 
 signals:
 
+    void createEntity();
+
     void createEntity(const std::string &name);
 
-    void destroyEntity(Entity entity);
+    void destroyEntity(const Entity &entity);
 
-    void setEntityName(Entity entity, const std::string &name);
+    void setEntityName(const Entity &entity, const std::string &name);
 
-    void createComponent(Entity entity, std::type_index componentType);
+    void createComponent(const Entity &entity, std::type_index componentType);
 
-    void updateComponent(Entity entity, const Component &value);
+    void updateComponent(const Entity &entity, const Component &value);
 
-    void destroyComponent(Entity entity, std::type_index type);
+    void destroyComponent(const Entity &entity, std::type_index type);
 
 private slots:
 
@@ -167,29 +185,197 @@ private slots:
         emit destroyComponent(sen->getEntity(), type);
     }
 
+    void currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous) {
+        if (current == nullptr) {
+            selectedEntity = {};
+        } else {
+            auto &ent = entityItemsReverse.at(current);
+            selectedEntity = xng::Entity(ent, *scene);
+        }
+        entityEditWidget->setEntity(selectedEntity);
+    }
+
+    void contextMenuRequested(const QPoint &pos) {
+        QMenu contextMenu(this);
+        auto *action = new QAction("Create Entity", this);
+        connect(action, SIGNAL(triggered()), this, SIGNAL(createEntity()));
+        contextMenu.addAction(action);
+
+        if (selectedEntity) {
+            action = new QAction(selectedEntity.hasName()
+                                 ? "Destroy " + QString(selectedEntity.getName().c_str())
+                                 : "Destroy Entity",
+                                 this);
+            connect(action, SIGNAL(triggered()), this, SLOT(destroyEntitySlot()));
+            contextMenu.addAction(action);
+        }
+
+        contextMenu.exec(mapToGlobal(pos));
+    }
+
+    void destroyEntitySlot() {
+        emit destroyEntity(selectedEntity);
+    }
+
+    void updateEntityName(const QString &name) {
+        emit setEntityName(entityEditWidget->getEntity(), name.toStdString().c_str());
+    }
+
+public:
+    bool eventFilter(QObject *watched, QEvent *event) override {
+        if (event->type() == QEvent::Type::MouseButtonPress) {
+            auto *ev = dynamic_cast<QMouseEvent *>(event);
+            auto index = sceneTree->indexAt(ev->pos());
+            if (index.isValid()) {
+                return QWidget::eventFilter(watched, event);
+            } else {
+                if (selectedEntity) {
+                    sceneTree->selectionModel()->clear();
+                    selectedEntity = {};
+                    entityEditWidget->setEntity(selectedEntity);
+                }
+                return true;
+            }
+        } else {
+            return QWidget::eventFilter(watched, event);
+        }
+    }
+
 public:
     void onEntityCreate(const EntityHandle &entity) override {
-        Listener::onEntityCreate(entity);
+        auto *item = new QTreeWidgetItem(sceneTree,
+                                         {scene->entityHasName(entity)
+                                          ? scene->getEntityName(entity).c_str()
+                                          : "Unnamed Entity"});
+        if (scene->checkComponent<TransformComponent>(entity)) {
+            auto &t = scene->getComponent<TransformComponent>(entity);
+            if (scene->entityNameExists(t.parent)) {
+                auto parent = scene->getEntity(t.parent);
+                auto *parentItem = entityItems.at(parent.getHandle());
+                parentItem->addChild(item);
+            }
+        } else {
+            sceneTree->addTopLevelItem(item);
+        }
+        entityItems[entity] = item;
+        entityItemsReverse[item] = entity;
+        entityEditWidget->setEntity(selectedEntity);
     }
 
     void onEntityDestroy(const EntityHandle &entity) override {
         if (entity == selectedEntity.getHandle()) {
             selectedEntity = {};
-            entityEditWidget->clearEntity();
+            entityEditWidget->setEntity(selectedEntity);
         }
+        auto *item = entityItems.at(entity);
+        auto *parent = entityItems.at(entity)->parent();
+        if (parent == nullptr) {
+            sceneTree->takeTopLevelItem(sceneTree->indexOfTopLevelItem(item));
+        } else {
+            parent->removeChild(item);
+        }
+        entityItems.erase(entity);
+        entityItemsReverse.erase(item);
+        entityEditWidget->setEntity(selectedEntity);
+    }
+
+    void onEntityNameChanged(const EntityHandle &entity,
+                             const std::string &newName,
+                             const std::string &oldName) override {
+        // Update child item parents
+        if (!oldName.empty()) {
+            std::map<EntityHandle, TransformComponent> comps;
+            for (auto &pair: scene->getPool<TransformComponent>()) {
+                if (pair.second.parent == oldName) {
+                    auto tcomp = pair.second;
+                    tcomp.parent = newName;
+                    comps[pair.first] = tcomp;
+                }
+            }
+            for (auto &pair: comps) {
+                scene->updateComponent<>(pair.first, pair.second);
+            }
+        }
+
+        // Update text
+        entityItems.at(entity)->setText(0, newName.c_str());
+        entityEditWidget->setEntity(selectedEntity);
     }
 
     void onComponentCreate(const EntityHandle &entity, const Component &component) override {
-        entityEditWidget->setEntity(Entity(entity, *scene));
+        if (component.getType() == typeid(TransformComponent)) {
+            auto &tcomp = dynamic_cast<const TransformComponent &>(component);
+
+            // Re-Add item to appropriate parent
+            auto *item = entityItems.at(entity);
+            if (item->parent() != nullptr) {
+                item->parent()->removeChild(item);
+            } else {
+                sceneTree->takeTopLevelItem(sceneTree->indexOfTopLevelItem(item));
+            }
+
+            if (!tcomp.parent.empty() && scene->entityNameExists(tcomp.parent)) {
+                auto parentEnt = scene->getEntity(tcomp.parent);
+                auto *parentItem = entityItems.at(parentEnt.getHandle());
+                parentItem->addChild(item);
+            } else {
+                sceneTree->addTopLevelItem(item);
+            }
+        }
+        entityEditWidget->setEntity(selectedEntity);
     }
 
     void onComponentDestroy(const EntityHandle &entity, const Component &component) override {
-        entityEditWidget->setEntity(Entity(entity, *scene));
+        if (component.getType() == typeid(TransformComponent)) {
+            // Re-Add item to top level
+            auto *item = entityItems.at(entity);
+            if (item->parent() != nullptr) {
+                item->parent()->removeChild(item);
+            } else {
+                sceneTree->takeTopLevelItem(sceneTree->indexOfTopLevelItem(item));
+            }
+            sceneTree->addTopLevelItem(item);
+        }
+        entityEditWidget->setEntity(selectedEntity);
     }
 
-    void onComponentUpdate(const EntityHandle &entity, const Component &oldComponent,
+    void onComponentUpdate(const EntityHandle &entity,
+                           const Component &oldComponent,
                            const Component &newComponent) override {
-        entityEditWidget->setEntity(Entity(entity, *scene));
+        if (newComponent.getType() == typeid(TransformComponent)) {
+            auto &oldComp = dynamic_cast<const TransformComponent &>(oldComponent);
+            auto &newComp = dynamic_cast<const TransformComponent &>(newComponent);
+
+            if (oldComp.parent == newComp.parent) {
+                // Parent unchanged
+                return;
+            }
+
+            auto oldTopLevel = !oldComp.parent.empty() && scene->entityNameExists(oldComp.parent);
+            auto newTopLevel = !newComp.parent.empty() && scene->entityNameExists(newComp.parent);
+
+            if (!oldTopLevel
+                && oldTopLevel == newTopLevel) {
+                // Still top level
+                return;
+            }
+
+            // Re-Add item to appropriate parent
+            auto *item = entityItems.at(entity);
+            if (item->parent() != nullptr) {
+                item->parent()->removeChild(item);
+            } else {
+                sceneTree->takeTopLevelItem(sceneTree->indexOfTopLevelItem(item));
+            }
+            if (!newComp.parent.empty() && scene->entityNameExists(newComp.parent)) {
+                auto parentEnt = scene->getEntity(newComp.parent);
+                auto *parentItem = entityItems.at(parentEnt.getHandle());
+                parentItem->addChild(item);
+            } else {
+                sceneTree->addTopLevelItem(item);
+            }
+        }
+        entityEditWidget->setEntity(selectedEntity);
     }
 
 private:
@@ -213,7 +399,8 @@ private:
     QTreeWidget *sceneTree;
     EntityEditWidget *entityEditWidget;
 
-    std::map<xng::Entity, QTreeWidgetItem *> entityItems;
+    std::map<xng::EntityHandle, QTreeWidgetItem *> entityItems;
+    std::map<QTreeWidgetItem *, xng::EntityHandle> entityItemsReverse;
 
     Entity selectedEntity;
 };
