@@ -25,6 +25,8 @@
 #include <QSizePolicy>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QApplication>
+#include <QStatusBar>
 
 #include <fstream>
 
@@ -113,6 +115,7 @@ MainWindow::MainWindow() : QMainWindow(),
 
     rootLayout->addWidget(middleSplitter);
 
+    rootLayout->setContentsMargins(6, 6, 6, 0);
     rootWidget->setLayout(rootLayout);
 
     loadStateFile();
@@ -225,6 +228,8 @@ MainWindow::MainWindow() : QMainWindow(),
     parsers.emplace_back(std::unique_ptr<ResourceParser>(ResourceParser::load(xng::ASSIMP).release()));
     parsers.emplace_back(std::unique_ptr<ResourceParser>(ResourceParser::load(xng::LIBSNDFILE).release()));
     ResourceRegistry::getDefaultRegistry().setImporter(ResourceImporter(std::move(parsers)));
+
+    statusBar()->show();
 }
 
 MainWindow::~MainWindow() {}
@@ -556,6 +561,8 @@ void MainWindow::loadScene(const std::filesystem::path &path) {
 #ifndef XEDITOR_DEBUGGING
     try {
 #endif
+        statusBar()->showMessage("Opening scene at " + QString(path.string().c_str()));
+        QApplication::processEvents();
         auto prot = JsonProtocol();
         std::ifstream fs(path.string());
         scene->clear();
@@ -564,6 +571,7 @@ void MainWindow::loadScene(const std::filesystem::path &path) {
         sceneSaved = true;
         updateActions();
         sceneRenderWidget->setScene(*scene);
+        statusBar()->showMessage("Opened \"" + QString(scene->getName().c_str()) + "\"");
 #ifndef XEDITOR_DEBUGGING
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
