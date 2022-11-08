@@ -149,6 +149,7 @@ private slots:
 
         auto *menu = new QMenu(this);
         menu->addAction(new ComponentAddAction("Transform", typeid(TransformComponent), this));
+        menu->addAction(new ComponentAddAction("Canvas Transform", typeid(CanvasTransformComponent), this));
 
         auto *menuSound = new QMenu("Sound", this);
         menuSound->addAction(new ComponentAddAction("Audio Source", typeid(AudioSourceComponent), this));
@@ -165,7 +166,6 @@ private slots:
 
         auto *menu2D = new QMenu("2D", this);
         menu2D->addAction(new ComponentAddAction("Canvas", typeid(CanvasComponent), this));
-        menu2D->addAction(new ComponentAddAction("Canvas Transform", typeid(CanvasTransformComponent), this));
         menu2D->addAction(new ComponentAddAction("Sprite", typeid(SpriteComponent), this));
         menu2D->addAction(new ComponentAddAction("Sprite Animation", typeid(SpriteAnimationComponent), this));
         menu2D->addAction(new ComponentAddAction("Text", typeid(TextComponent), this));
