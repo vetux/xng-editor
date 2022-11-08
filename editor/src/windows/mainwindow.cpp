@@ -501,8 +501,6 @@ void MainWindow::saveScene() {
 
 void MainWindow::loadProject(const std::filesystem::path &path) {
     scene->clear();
-    sceneEditWidget->setScene(scene);
-    sceneRenderWidget->setScene(scene, sceneMutex);
     try {
         project.load(path.parent_path());
         setWindowTitle(project.getSettings().name.c_str());
