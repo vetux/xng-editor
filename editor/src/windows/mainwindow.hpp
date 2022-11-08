@@ -111,6 +111,12 @@ protected slots:
 
     void closeEvent(QCloseEvent *event) override;
 
+    void openPath(const std::filesystem::path &path);
+
+    void deletePath(const std::filesystem::path &path);
+
+    void createPath(const std::filesystem::path &parentPath);
+
 private:
     void onEntityCreate(const EntityHandle &entity) override;
 
@@ -126,7 +132,6 @@ private:
     void onComponentUpdate(const EntityHandle &entity, const Component &oldComponent,
                            const Component &newComponent) override;
 
-private:
     void keyPressEvent(QKeyEvent *event) override;
 
     void keyReleaseEvent(QKeyEvent *event) override;

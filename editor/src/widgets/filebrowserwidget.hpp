@@ -26,13 +26,14 @@
 #include <QFileIconProvider>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QAction>
 
 #include <filesystem>
 
 class FileBrowserWidget : public QWidget {
 Q_OBJECT
 public:
-    //TODO: ListWidget file display, Drag and Drop, Context menu
+    //TODO: Drag and Drop, Context menu
     explicit FileBrowserWidget(QWidget *parent)
             : QWidget(parent) {
         setLayout(new QVBoxLayout());
@@ -44,6 +45,37 @@ public:
         model.setOption(QFileSystemModel::DontUseCustomDirectoryIcons);
         //model.setOption(QFileSystemModel::DontWatchForChanges);
         tree->setModel(&model);
+        tree->setContextMenuPolicy(Qt::ActionsContextMenu);
+        openAction = new QAction("Open...");
+        editAction = new QAction("Edit...");
+        deleteAction = new QAction("Delete...");
+        createAction = new QAction("Create New File...");
+        tree->setSelectionMode(QAbstractItemView::SingleSelection);
+        connect(openAction,
+                SIGNAL(triggered(bool)),
+                this,
+                SLOT(onOpenPath()));
+        connect(editAction,
+                SIGNAL(triggered(bool)),
+                this,
+                SLOT(onEditPath()));
+        connect(deleteAction,
+                SIGNAL(triggered(bool)),
+                this,
+                SLOT(onDeletePath()));
+        connect(createAction,
+                SIGNAL(triggered(bool)),
+                this,
+                SLOT(onCreatePath()));
+        tree->addAction(openAction);
+        tree->addAction(editAction);
+        tree->addAction(deleteAction);
+        tree->addAction(createAction);
+
+        connect(tree,
+                SIGNAL(doubleClicked(const QModelIndex &)),
+                this,
+                SLOT(treeDoubleClicked(const QModelIndex &)));
     }
 
     void setCurrentPath(const std::filesystem::path &value) {
@@ -58,25 +90,59 @@ public:
         return model.rootPath().toStdString().c_str();
     }
 
+    std::filesystem::path getSelectedPath() {
+        auto indices = tree->selectionModel()->selectedIndexes();
+        if (indices.empty()) {
+            return "";
+        } else {
+            return model.filePath(indices.at(0)).toStdString().c_str();
+        }
+    }
+
 signals:
 
-    void openMaterial(const std::filesystem::path &path);
+    void openPath(const std::filesystem::path &path);
 
-    void openShader(const std::filesystem::path &path);
+    void editPath(const std::filesystem::path &path);
 
-    void openSkybox(const std::filesystem::path &path);
+    void deletePath(const std::filesystem::path &path);
 
-    void openTexture(const std::filesystem::path &path);
+    void createPath(const std::filesystem::path &parentPath);
 
-    void openSprite(const std::filesystem::path &path);
+private slots:
 
-    void openSpriteAnimation(const std::filesystem::path &path);
+    void onOpenPath() {
+        emit openPath(getSelectedPath());
+    }
+
+    void onEditPath() {
+        emit editPath(getSelectedPath());
+    }
+
+    void onDeletePath() {
+        emit deletePath(getSelectedPath());
+    }
+
+    void onCreatePath() {
+        emit createPath(getSelectedPath());
+    }
+
+    void treeDoubleClicked(const QModelIndex &index) {
+        std::filesystem::path p(model.filePath(index).toStdString().c_str());
+        if (is_regular_file(p)) {
+            emit openPath(p);
+        }
+    }
 
 private:
     std::filesystem::path currentPath;
     QTreeView *tree;
     QFileSystemModel model;
     QFileIconProvider iconProvider;
+    QAction *openAction;
+    QAction *editAction;
+    QAction *deleteAction;
+    QAction *createAction;
 };
 
 #endif //XEDITOR_FILEBROWSERWIDGET_HPP

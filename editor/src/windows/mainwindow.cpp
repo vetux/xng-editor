@@ -203,6 +203,19 @@ MainWindow::MainWindow() : QMainWindow(),
             this,
             SLOT(openBuildSettings()));
 
+    connect(fileBrowserWidget,
+            SIGNAL(openPath(const std::filesystem::path &)),
+            this,
+            SLOT(openPath(const std::filesystem::path &)));
+    connect(fileBrowserWidget,
+            SIGNAL(deletePath(const std::filesystem::path &)),
+            this,
+            SLOT(deletePath(const std::filesystem::path &)));
+    connect(fileBrowserWidget,
+            SIGNAL(createPath(const std::filesystem::path &)),
+            this,
+            SLOT(createPath(const std::filesystem::path &)));
+
     menuBar()->addMenu(actions.fileMenu);
     menuBar()->addMenu(actions.buildMenu);
     menuBar()->addMenu(actions.sceneMenu);
@@ -372,7 +385,7 @@ void MainWindow::newProject() {
 }
 
 void MainWindow::openProject() {
-    if(!checkUnsavedSceneChanges()){
+    if (!checkUnsavedSceneChanges()) {
         QMessageBox::information(this, "Aborted", "The operation was cancelled, no project opened.");
         return;
     }
@@ -390,7 +403,7 @@ void MainWindow::openProject() {
 }
 
 void MainWindow::openRecentProject() {
-    if (!checkUnsavedSceneChanges()){
+    if (!checkUnsavedSceneChanges()) {
         QMessageBox::information(this, "Aborted", "The operation was cancelled, no project opened.");
         return;
     }
@@ -409,7 +422,7 @@ void MainWindow::openProjectSettings() {
 }
 
 void MainWindow::newScene() {
-    if (!checkUnsavedSceneChanges()){
+    if (!checkUnsavedSceneChanges()) {
         QMessageBox::information(this, "Aborted", "The operation was cancelled, no scene created.");
         return;
     }
@@ -422,7 +435,7 @@ void MainWindow::newScene() {
 }
 
 void MainWindow::openScene() {
-    if (!checkUnsavedSceneChanges()){
+    if (!checkUnsavedSceneChanges()) {
         QMessageBox::information(this, "Aborted", "The operation was cancelled, no scene opened.");
         return;
     }
@@ -671,6 +684,47 @@ void MainWindow::updateActions() {
 
 void MainWindow::closeEvent(QCloseEvent *event) {
     shutdown();
+}
+
+void MainWindow::openPath(const std::filesystem::path &path) {
+    if (path.filename().string().c_str() == Paths::projectSettingsFilename()) {
+        // Open project
+        loadProject(path);
+    } else if (path.extension().string() == ".json") {
+        // Open / Edit resource bundle
+        std::ifstream fs(path);
+        auto str = std::string(std::istream_iterator<char>(fs),
+                               std::istream_iterator<char>());
+        std::vector<char> vec;
+        vec.insert(vec.begin(), str.begin(), str.end());
+        auto bundle = JsonParser().read(vec, path.extension(), nullptr);
+        for (auto &pair: bundle.assets) {
+            if (pair.second->getTypeIndex() == typeid(EntityScene)) {
+                if (QMessageBox::question(this, "Open Scene",
+                                          "Do you want to open the scene at: " + QString(path.string().c_str()) + " ?")
+                    == QMessageBox::Yes) {
+                    loadScene(path);
+                }
+            }
+        }
+    } else {
+        QMessageBox::information(this, "Unrecognized file",
+                                 "Could not determine how to open the file at " + QString(path.string().c_str()));
+    }
+}
+
+void MainWindow::deletePath(const std::filesystem::path &path) {
+    if (QMessageBox::question(this,
+                              "Delete Path",
+                              "Do you want to move the file/files at " + QString(path.string().c_str()) +
+                              " to the trash?")
+        == QMessageBox::Yes) {
+        // Move files/files to trash
+    }
+}
+
+void MainWindow::createPath(const std::filesystem::path &parentPath) {
+    // Create resource / scene dialog
 }
 
 void MainWindow::onEntityCreate(const EntityHandle &entity) {
