@@ -171,7 +171,6 @@ private:
 
     std::filesystem::path scenePath;
 
-    std::shared_ptr<std::mutex> sceneMutex;
     std::shared_ptr<xng::EntityScene> scene;
 
     bool sceneSaved = true;
@@ -184,6 +183,8 @@ private:
     std::vector<std::string> recentProjects;
     std::map<QAction *, std::string> recentProjectActions;
     std::map<std::string, QAction *> recentProjectActionsReverse;
+
+    ResourceImporter importer;
 };
 
 #endif //XEDITOR_MAINWINDOW_HPP

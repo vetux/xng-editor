@@ -77,8 +77,7 @@ MainWindow::Actions::Actions(QWidget *parent) {
 }
 
 MainWindow::MainWindow() : QMainWindow(),
-                           actions(this),
-                           sceneMutex(std::make_unique<std::mutex>()) {
+                           actions(this) {
     scene = std::make_shared<EntityScene>();
 
     scene->addListener(*this);
@@ -120,7 +119,6 @@ MainWindow::MainWindow() : QMainWindow(),
     loadRecentProjects();
 
     sceneEditWidget->setScene(scene);
-    sceneRenderWidget->setScene(scene, sceneMutex);
 
     connect(sceneEditWidget,
             SIGNAL(createEntity()),
@@ -221,6 +219,12 @@ MainWindow::MainWindow() : QMainWindow(),
     menuBar()->addMenu(actions.sceneMenu);
 
     updateActions();
+    std::vector<std::unique_ptr<ResourceParser>> parsers;
+    parsers.emplace_back(std::unique_ptr<ResourceParser>(new StbiParser));
+    parsers.emplace_back(std::unique_ptr<ResourceParser>(new JsonParser));
+    parsers.emplace_back(std::unique_ptr<ResourceParser>(ResourceParser::load(xng::ASSIMP).release()));
+    parsers.emplace_back(std::unique_ptr<ResourceParser>(ResourceParser::load(xng::LIBSNDFILE).release()));
+    ResourceRegistry::getDefaultRegistry().setImporter(ResourceImporter(std::move(parsers)));
 }
 
 MainWindow::~MainWindow() {}
@@ -239,7 +243,6 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
 }
 
 void MainWindow::createEntity() {
-    std::lock_guard<std::mutex> guard(*sceneMutex);
     auto selectedEntity = sceneEditWidget->getSelectedEntity();
     auto ent = scene->createEntity();
     TransformComponent comp;
@@ -254,7 +257,6 @@ void MainWindow::createEntity() {
 }
 
 void MainWindow::createEntity(const std::string &name) {
-    std::lock_guard<std::mutex> guard(*sceneMutex);
     auto selectedEntity = sceneEditWidget->getSelectedEntity();
     if (scene->entityNameExists(name)) {
         QMessageBox::warning(this, "Cannot Create Entity", ("Entity with name " + name + " already exists").c_str());
@@ -299,7 +301,6 @@ void MainWindow::destroyEntity(const Entity &entity) {
         != QMessageBox::Yes) {
         return;
     }
-    std::lock_guard<std::mutex> guard(*sceneMutex);
     if (entity.hasName()) {
         auto vec = destroyRecursive(entity.getHandle(), entity.getName(), *scene);
         for (auto &v: vec) {
@@ -313,7 +314,6 @@ void MainWindow::destroyEntity(const Entity &entity) {
 }
 
 void MainWindow::setEntityName(const Entity &entity, const std::string &name) {
-    std::lock_guard<std::mutex> guard(*sceneMutex);
     if (scene->entityNameExists(name)) {
         QMessageBox::warning(this, "Cannot Set Entity Name", ("Entity with name " + name + " already exists").c_str());
     } else {
@@ -324,7 +324,6 @@ void MainWindow::setEntityName(const Entity &entity, const std::string &name) {
 }
 
 void MainWindow::createComponent(const Entity &entity, std::type_index componentType) {
-    std::lock_guard<std::mutex> guard(*sceneMutex);
     if (scene->checkComponent(entity.getHandle(), componentType)) {
         QMessageBox::warning(this, "Cannot Create Component",
                              (std::string(componentType.name()) + " already exists on " + entity.toString()).c_str());
@@ -336,14 +335,12 @@ void MainWindow::createComponent(const Entity &entity, std::type_index component
 }
 
 void MainWindow::updateComponent(const Entity &entity, const Component &value) {
-    std::lock_guard<std::mutex> guard(*sceneMutex);
     scene->updateComponent(entity.getHandle(), value);
     sceneSaved = false;
     updateActions();
 }
 
 void MainWindow::destroyComponent(const Entity &entity, std::type_index type) {
-    std::lock_guard<std::mutex> guard(*sceneMutex);
     scene->destroyComponent(entity.getHandle(), type);
     sceneSaved = false;
     updateActions();
@@ -368,9 +365,9 @@ void MainWindow::newProject() {
         auto path = std::filesystem::path(dir.toStdString());
         if (!std::filesystem::is_empty(path)) {
             QMessageBox::warning(this, "Invalid Directory", ("Directory "
-                                                                 + QString(path.string().c_str())
-                                                                 +
-                                                                 " has existing contents, please select a writeable empty directory."));
+                                                             + QString(path.string().c_str())
+                                                             +
+                                                             " has existing contents, please select a writeable empty directory."));
         } else {
             Project::create(std::filesystem::path(dir.toStdString()),
                             std::filesystem::path(Paths::projectTemplatePath().string()));
@@ -429,6 +426,8 @@ void MainWindow::newScene() {
 
     sceneSaved = true;
     updateActions();
+
+    sceneRenderWidget->setScene(*scene);
 }
 
 void MainWindow::openScene() {
@@ -554,19 +553,24 @@ void MainWindow::saveStateFile() {
 }
 
 void MainWindow::loadScene(const std::filesystem::path &path) {
+#ifndef XEDITOR_DEBUGGING
     try {
-        std::lock_guard<std::mutex> guard(*sceneMutex);
+#endif
         auto prot = JsonProtocol();
         std::ifstream fs(path.string());
+        scene->clear();
         *scene << prot.deserialize(fs);
         scenePath = path;
         sceneSaved = true;
         updateActions();
+        sceneRenderWidget->setScene(*scene);
+#ifndef XEDITOR_DEBUGGING
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Scene load failed",
                              ("Failed to load scene at " + QString(path.string().c_str()) + " Error: " + e.what()));
     }
+#endif
 }
 
 void MainWindow::loadProject(const std::filesystem::path &path) {
@@ -724,31 +728,37 @@ void MainWindow::createPath(const std::filesystem::path &parentPath) {
 void MainWindow::onEntityCreate(const EntityHandle &entity) {
     sceneSaved = false;
     updateActions();
+    sceneRenderWidget->setScene(*scene);
 }
 
 void MainWindow::onEntityDestroy(const EntityHandle &entity) {
     sceneSaved = false;
     updateActions();
+    sceneRenderWidget->setScene(*scene);
 }
 
 void
 MainWindow::onEntityNameChanged(const EntityHandle &entity, const std::string &newName, const std::string &oldName) {
     sceneSaved = false;
     updateActions();
+    sceneRenderWidget->setScene(*scene);
 }
 
 void MainWindow::onComponentCreate(const EntityHandle &entity, const Component &component) {
     sceneSaved = false;
     updateActions();
+    sceneRenderWidget->setScene(*scene);
 }
 
 void MainWindow::onComponentDestroy(const EntityHandle &entity, const Component &component) {
     sceneSaved = false;
     updateActions();
+    sceneRenderWidget->setScene(*scene);
 }
 
 void MainWindow::onComponentUpdate(const EntityHandle &entity, const Component &oldComponent,
                                    const Component &newComponent) {
     sceneSaved = false;
     updateActions();
+    sceneRenderWidget->setScene(*scene);
 }

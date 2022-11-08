@@ -50,12 +50,10 @@ void Project::load(const std::filesystem::path &file) {
     settings = {};
     settings << msg;
 
-    directory = file.parent_path();
-
     // Create and register asset bundle archives
     for (auto &bundle: settings.assetBundles) {
-        auto bundleDir = directory;
-        bundleDir.append(bundle.directory.string());
+        auto bundleDir = file;
+        bundleDir.append(bundle.directory);
         ResourceRegistry::getDefaultRegistry().addArchive(bundle.scheme,
                                                           std::make_shared<xng::DirectoryArchive>(bundleDir));
     }
@@ -103,6 +101,7 @@ void Project::setSettings(const ProjectSettings &value) {
     settings = value;
 }
 
-const std::filesystem::path &Project::getDirectory() const {
+const std::string &Project::getDirectory() const {
     return directory;
 }
+

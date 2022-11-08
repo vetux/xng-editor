@@ -36,7 +36,7 @@ struct AssetBundle : public Messageable {
     bool encrypt = false;
     xng::AES::Key key{};
 
-    std::filesystem::path directory; // The directory which is bundled into name.pak
+    std::string directory; // The name of the directory which is bundled into name.pak relative to the project directory
 
     Messageable &operator<<(const Message &message) override {
         name = message.value("name", std::string());
@@ -60,7 +60,7 @@ struct AssetBundle : public Messageable {
         message["encrypt"] = encrypt;
         message["key"] = key;
 
-        message["directory"] = directory.string();
+        message["directory"] = directory;
 
         return message;
     }

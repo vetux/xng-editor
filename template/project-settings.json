@@ -4,7 +4,7 @@
     {
       "name": "Assets",
       "scheme": "assets",
-      "directory": "assets/"
+      "directory": "assets"
     }
   ],
   "buildSettings": []

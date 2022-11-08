@@ -64,10 +64,8 @@ public:
         });
     }
 
-    void setScene(std::shared_ptr<EntityScene> scene, std::shared_ptr<std::mutex> mutex) {
-        if (scene) {
-            ren.setScene(scene, mutex);
-        }
+    void setScene(const EntityScene &scene) {
+        ren.setScene(scene);
     }
 
 protected:

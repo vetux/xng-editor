@@ -85,11 +85,10 @@ namespace xng {
             }
         }
 
-        void setScene(const std::shared_ptr<EntityScene> &value, const std::shared_ptr<std::mutex> &mValue) {
+        void setScene(const EntityScene &value) {
             std::lock_guard<std::mutex> guard(mutex);
-            scene = value;
+            scene = std::make_shared<EntityScene>(value);
             sceneChanged = true;
-            sceneMutex = mValue;
         }
 
         void setFrameGraphLayout(const FrameGraphLayout &value) {
@@ -129,10 +128,11 @@ namespace xng {
             auto lastFrame = std::chrono::high_resolution_clock::now();
             DeltaTime deltaTime = 0;
             while (!shutdown) {
+#ifndef XEDITOR_DEBUGGING
                 try {
+#endif
                     ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
                     std::lock_guard<std::mutex> guard(mutex);
-                    std::lock_guard<std::mutex> sGuard(*sceneMutex);
                     if (layoutChanged) {
                         frameGraphRenderer->setLayout(layout);
                         layoutChanged = false;
@@ -151,7 +151,9 @@ namespace xng {
                         frameSizeChanged = false;
                     }
                     ecs.update(deltaTime);
+
                     frame = std::make_shared<ImageRGBA>(texture->download());
+#ifndef XEDITOR_DEBUGGING
                 } catch (...) {
                     {
                         std::lock_guard<std::mutex> guard(mutex);
@@ -159,6 +161,7 @@ namespace xng {
                     }
                     std::rethrow_exception(exception);
                 }
+#endif
 
                 auto frameEnd = std::chrono::high_resolution_clock::now();
                 auto frameDelta = frameEnd - frameStart;
@@ -186,7 +189,6 @@ namespace xng {
         Vec2i frameSize = {10, 10};
         bool frameSizeChanged = false;
 
-        std::shared_ptr<std::mutex> sceneMutex;
         std::shared_ptr<EntityScene> scene;
         bool sceneChanged = false;
 

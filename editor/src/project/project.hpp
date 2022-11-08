@@ -26,6 +26,8 @@
 #include "project/buildsettings.hpp"
 #include "project/projectsettings.hpp"
 
+#include "xng/io/archive.hpp"
+
 class Project {
 public:
     /**
@@ -76,14 +78,14 @@ public:
 
     void setSettings(const ProjectSettings &settings);
 
-    const std::filesystem::path &getDirectory() const;
+    const std::string &getDirectory() const;
 
     bool initialized() const {
         return !directory.empty();
     }
 
 private:
-    std::filesystem::path directory;
+    std::string directory;
     ProjectSettings settings;
 };
 
