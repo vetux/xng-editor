@@ -46,29 +46,14 @@ public:
 
         setLayout(new QVBoxLayout);
 
-        auto *line = new QWidget(this);
-        line->setLayout(new QHBoxLayout);
-        line->layout()->setMargin(0);
-        line->layout()->addWidget(positionLabel);
-        line->layout()->addWidget(positionWidget);
+        layout()->addWidget(positionLabel);
+        layout()->addWidget(positionWidget);
 
-        layout()->addWidget(line);
+        layout()->addWidget(rotationLabel);
+        layout()->addWidget(rotationWidget);
 
-        line = new QWidget(this);
-        line->setLayout(new QHBoxLayout);
-        line->layout()->setMargin(0);
-        line->layout()->addWidget(rotationLabel);
-        line->layout()->addWidget(rotationWidget);
-
-        layout()->addWidget(line);
-
-        line = new QWidget(this);
-        line->setLayout(new QHBoxLayout);
-        line->layout()->setMargin(0);
-        line->layout()->addWidget(scaleLabel);
-        line->layout()->addWidget(scaleWidget);
-
-        layout()->addWidget(line);
+        layout()->addWidget(scaleLabel);
+        layout()->addWidget(scaleWidget);
 
         connect(positionWidget, SIGNAL(valueChanged(const Vec3f &)), this, SLOT(valueChanged(const Vec3f &)));
         connect(rotationWidget, SIGNAL(valueChanged(const Vec3f &)), this, SLOT(valueChanged(const Vec3f &)));

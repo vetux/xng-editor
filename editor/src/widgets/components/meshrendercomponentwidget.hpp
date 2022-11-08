@@ -16,36 +16,28 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef XEDITOR_AUDIOLISTENERCOMPONENTWIDGET_HPP
-#define XEDITOR_AUDIOLISTENERCOMPONENTWIDGET_HPP
+#ifndef XEDITOR_MESHRENDERCOMPONENTWIDGET_HPP
+#define XEDITOR_MESHRENDERCOMPONENTWIDGET_HPP
 
 #include "widgets/components/componentwidget.hpp"
 #include "widgets/vector3widget.hpp"
 
 #include "xng/xng.hpp"
 
-class AudioListenerComponentWidget : public ComponentWidget {
+class MeshRenderComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
-    explicit AudioListenerComponentWidget(QWidget *parent = nullptr)
+    explicit MeshRenderComponentWidget(QWidget *parent = nullptr)
             : ComponentWidget(parent) {
-        velocityWidget = new Vector3Widget(this);
-        layout()->addWidget(new QLabel("Velocity:"));
-        layout()->addWidget(velocityWidget);
-        connect(velocityWidget,
-                SIGNAL(valueChanged(const Vec3f &)),
-                this,
-                SLOT(onVelocityChanged(const Vec3f &)));
-        headerText->setText("Audio Listener");
+        headerText->setText("Mesh");
     }
 
-    void set(const AudioListenerComponent &value) {
+    void set(const MeshRenderComponent &value) {
         component = value;
-        velocityWidget->set(component.velocity);
         headerCheckBox->setChecked(component.enabled);
     }
 
-    const AudioListenerComponent &get() const {
+    const MeshRenderComponent &get() const {
         return component;
     }
 
@@ -54,12 +46,12 @@ public:
     }
 
     std::type_index getComponentType() override {
-        return typeid(AudioListenerComponent);
+        return typeid(MeshRenderComponent);
     }
 
 signals:
 
-    void valueChanged(const AudioListenerComponent &value);
+    void valueChanged(const MeshRenderComponent &value);
 
 protected:
     void checkBoxStateChange(int state) override {
@@ -67,16 +59,8 @@ protected:
         emit valueChanged(component);
     }
 
-private slots:
-    void onVelocityChanged(const Vec3f &v){
-        component.velocity = v;
-        emit valueChanged(component);
-    }
-
 private:
-
-    AudioListenerComponent component;
-    Vector3Widget *velocityWidget;
+    MeshRenderComponent component;
 };
 
-#endif //XEDITOR_AUDIOLISTENERCOMPONENTWIDGET_HPP
+#endif //XEDITOR_MESHRENDERCOMPONENTWIDGET_HPP

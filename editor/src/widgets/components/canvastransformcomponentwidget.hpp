@@ -26,7 +26,7 @@
 
 #include "componentwidget.hpp"
 
-#include "widgets/math/rectanglewidget.hpp"
+#include "widgets/rectanglewidget.hpp"
 
 using namespace xng;
 
@@ -94,6 +94,9 @@ public:
         centerLabel->setText("Center:");
         rotationLabel->setText("Rotation:");
 
+        rotationWidget->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+        rotationWidget->setMinimumWidth(10);
+
         layout()->addWidget(anchorLabel);
         layout()->addWidget(anchorWidget);
 
@@ -132,6 +135,10 @@ public:
 
     virtual std::type_index getType() override {
         return typeid(CanvasTransformComponentWidget);
+    }
+
+    std::type_index getComponentType() override {
+        return typeid(CanvasTransformComponent);
     }
 
 protected:

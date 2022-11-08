@@ -19,4 +19,61 @@
 #ifndef XEDITOR_SPRITEANIMATIONCOMPONENTWIDGET_HPP
 #define XEDITOR_SPRITEANIMATIONCOMPONENTWIDGET_HPP
 
+#include "widgets/components/componentwidget.hpp"
+#include "widgets/vector3widget.hpp"
+
+#include "xng/xng.hpp"
+
+#include "widgets/uriwidget.hpp"
+
+class SpriteAnimationComponentWidget : public ComponentWidget {
+Q_OBJECT
+public:
+    explicit SpriteAnimationComponentWidget(QWidget *parent = nullptr)
+            : ComponentWidget(parent) {
+        animationWidget = new UriWidget;
+        layout()->addWidget(animationWidget);
+        headerText->setText("Sprite Animation");
+    }
+
+    void set(const SpriteAnimationComponent &value) {
+        component = value;
+        animationWidget->setValue(value.animation.getUri());
+        headerCheckBox->setChecked(component.enabled);
+    }
+
+    const SpriteAnimationComponent &get() const {
+        return component;
+    }
+
+    virtual std::type_index getType() override {
+        return component.getType();
+    }
+
+    std::type_index getComponentType() override {
+        return typeid(SpriteAnimationComponent);
+    }
+
+signals:
+
+    void valueChanged(const SpriteAnimationComponent &value);
+
+protected:
+    void checkBoxStateChange(int state) override {
+        component.enabled = state == Qt::Checked;
+        emit valueChanged(component);
+    }
+
+private slots:
+
+    void animationChanged(const QString &path) {
+        component.animation = ResourceHandle<SpriteAnimation>(Uri(path.toStdString().c_str()));
+        emit valueChanged(component);
+    }
+
+private:
+    SpriteAnimationComponent component;
+    UriWidget *animationWidget;
+};
+
 #endif //XEDITOR_SPRITEANIMATIONCOMPONENTWIDGET_HPP

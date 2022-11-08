@@ -151,19 +151,28 @@ private slots:
         menu->addAction(new ComponentAddAction("Transform", typeid(TransformComponent), this));
 
         auto *menuSound = new QMenu("Sound", this);
-        menuSound->addAction(new ComponentAddAction("Audio Source", typeid(TransformComponent), this));
-        menuSound->addAction(new ComponentAddAction("Audio Listener", typeid(TransformComponent), this));
+        menuSound->addAction(new ComponentAddAction("Audio Source", typeid(AudioSourceComponent), this));
+        menuSound->addAction(new ComponentAddAction("Audio Listener", typeid(AudioListenerComponent), this));
 
         auto *menuPhysics = new QMenu("Physics", this);
         menuPhysics->addAction(new ComponentAddAction("Rigidbody", typeid(RigidBodyComponent), this));
 
-        auto *menuCanvas = new QMenu("Canvas Rendering", this);
-        menuCanvas->addAction(new ComponentAddAction("Canvas", typeid(CanvasComponent), this));
-        menuCanvas->addAction(new ComponentAddAction("Canvas Transform", typeid(CanvasTransformComponent), this));
-        menuCanvas->addAction(new ComponentAddAction("Sprite", typeid(SpriteComponent), this));
-        menuCanvas->addAction(new ComponentAddAction("Text", typeid(TextComponent), this));
+        auto *menu3D = new QMenu("3D", this);
+        menu3D->addAction(new ComponentAddAction("Camera", typeid(CameraComponent), this));
+        menu3D->addAction(new ComponentAddAction("Light", typeid(LightComponent), this));
+        menu3D->addAction(new ComponentAddAction("Mesh", typeid(MeshRenderComponent), this));
+        menu3D->addAction(new ComponentAddAction("Skybox", typeid(SkyboxComponent), this));
 
-        menu->addMenu(menuCanvas);
+        auto *menu2D = new QMenu("2D", this);
+        menu2D->addAction(new ComponentAddAction("Canvas", typeid(CanvasComponent), this));
+        menu2D->addAction(new ComponentAddAction("Canvas Transform", typeid(CanvasTransformComponent), this));
+        menu2D->addAction(new ComponentAddAction("Sprite", typeid(SpriteComponent), this));
+        menu2D->addAction(new ComponentAddAction("Sprite Animation", typeid(SpriteAnimationComponent), this));
+        menu2D->addAction(new ComponentAddAction("Text", typeid(TextComponent), this));
+        menu2D->addAction(new ComponentAddAction("Button", typeid(ButtonComponent), this));
+
+        menu->addMenu(menu3D);
+        menu->addMenu(menu2D);
         menu->addMenu(menuPhysics);
         menu->addMenu(menuSound);
 

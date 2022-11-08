@@ -44,6 +44,12 @@ public:
         layout()->addWidget(spinX);
         layout()->addWidget(spinY);
         layout()->setMargin(0);
+
+        spinX->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+        spinY->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+
+        spinX->setMinimumWidth(10);
+        spinY->setMinimumWidth(10);
     };
 
     void set(const Vec2f &vec) {
@@ -54,6 +60,12 @@ public:
 
     Vec2f get() {
         return value;
+    }
+
+    void setRange(double min = std::numeric_limits<double>::min(),
+                  double max = std::numeric_limits<double>::max()) {
+        spinX->setRange(min, max);
+        spinY->setRange(min, max);
     }
 
 signals:

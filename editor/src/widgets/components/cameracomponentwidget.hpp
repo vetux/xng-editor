@@ -16,36 +16,36 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef XEDITOR_AUDIOLISTENERCOMPONENTWIDGET_HPP
-#define XEDITOR_AUDIOLISTENERCOMPONENTWIDGET_HPP
+#ifndef XEDITOR_CAMERACOMPONENTWIDGET_HPP
+#define XEDITOR_CAMERACOMPONENTWIDGET_HPP
 
 #include "widgets/components/componentwidget.hpp"
 #include "widgets/vector3widget.hpp"
+#include "widgets/camerawidget.hpp"
 
 #include "xng/xng.hpp"
 
-class AudioListenerComponentWidget : public ComponentWidget {
+class CameraComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
-    explicit AudioListenerComponentWidget(QWidget *parent = nullptr)
+    explicit CameraComponentWidget(QWidget *parent = nullptr)
             : ComponentWidget(parent) {
-        velocityWidget = new Vector3Widget(this);
-        layout()->addWidget(new QLabel("Velocity:"));
-        layout()->addWidget(velocityWidget);
-        connect(velocityWidget,
-                SIGNAL(valueChanged(const Vec3f &)),
+        cameraWidget = new CameraWidget(this);
+        layout()->addWidget(cameraWidget);
+        connect(cameraWidget,
+                SIGNAL(valueChanged(const Camera &)),
                 this,
-                SLOT(onVelocityChanged(const Vec3f &)));
-        headerText->setText("Audio Listener");
+                SLOT(cameraChanged(const Camera &)));
+        headerText->setText("Camera");
     }
 
-    void set(const AudioListenerComponent &value) {
+    void set(const CameraComponent &value) {
         component = value;
-        velocityWidget->set(component.velocity);
+        cameraWidget->setValue(component.camera);
         headerCheckBox->setChecked(component.enabled);
     }
 
-    const AudioListenerComponent &get() const {
+    const CameraComponent &get() const {
         return component;
     }
 
@@ -54,12 +54,12 @@ public:
     }
 
     std::type_index getComponentType() override {
-        return typeid(AudioListenerComponent);
+        return typeid(CameraComponent);
     }
 
 signals:
 
-    void valueChanged(const AudioListenerComponent &value);
+    void valueChanged(const CameraComponent &value);
 
 protected:
     void checkBoxStateChange(int state) override {
@@ -68,15 +68,15 @@ protected:
     }
 
 private slots:
-    void onVelocityChanged(const Vec3f &v){
-        component.velocity = v;
+
+    void cameraChanged(const Camera &camera) {
+        component.camera = camera;
         emit valueChanged(component);
     }
 
 private:
-
-    AudioListenerComponent component;
-    Vector3Widget *velocityWidget;
+    CameraComponent component;
+    CameraWidget *cameraWidget;
 };
 
-#endif //XEDITOR_AUDIOLISTENERCOMPONENTWIDGET_HPP
+#endif //XEDITOR_CAMERACOMPONENTWIDGET_HPP

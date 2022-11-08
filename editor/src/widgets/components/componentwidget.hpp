@@ -65,7 +65,7 @@ public:
         headerText->setFont(font);
 
         connect(headerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(checkBoxStateChange(int)));
-        connect(headerDestroyButton, SIGNAL(pressed()), this, SIGNAL(destroyPressed()));
+        connect(headerDestroyButton, SIGNAL(clicked()), this, SIGNAL(destroyPressed()));
     }
 
     virtual void setTitle(const QString &title) {
@@ -83,6 +83,8 @@ public:
     virtual std::type_index getType() {
         return typeid(ComponentWidget);
     }
+
+    virtual std::type_index getComponentType() = 0;
 
 signals:
 

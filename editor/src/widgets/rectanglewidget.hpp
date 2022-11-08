@@ -46,6 +46,8 @@ public:
         line1->layout()->addWidget(dimensionLabel);
         line1->layout()->addWidget(dimensionWidget);
 
+        dimensionWidget->setRange(1);
+
         setLayout(new QVBoxLayout);
         layout()->addWidget(line0);
         layout()->addWidget(line1);

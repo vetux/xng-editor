@@ -25,7 +25,7 @@
 
 #include "componentwidget.hpp"
 
-#include "widgets/math/transformwidget.hpp"
+#include "widgets/transformwidget.hpp"
 
 using namespace xng;
 
@@ -65,6 +65,10 @@ public:
 
     virtual std::type_index getType() override {
         return typeid(TransformComponentWidget);
+    }
+
+    std::type_index getComponentType() override {
+        return typeid(TransformComponent);
     }
 
 protected:

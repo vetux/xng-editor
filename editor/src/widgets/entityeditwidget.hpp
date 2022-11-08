@@ -23,16 +23,12 @@
 #include <QWidget>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QVBoxLayout>
+#include <QLineEdit>
 
 #include "xng/ecs/entity.hpp"
 
 #include "widgets/components/componentwidget.hpp"
-#include "widgets/components/canvascomponentwidget.hpp"
-#include "widgets/components/canvastransformcomponentwidget.hpp"
-#include "widgets/components/rigidbodycomponentwidget.hpp"
-#include "widgets/components/spriteanimationcomponentwidget.hpp"
-#include "widgets/components/spritecomponentwidget.hpp"
-#include "widgets/components/transformcomponentwidget.hpp"
 
 class EntityEditWidget : public QWidget {
 Q_OBJECT
@@ -87,8 +83,8 @@ public:
 
         layout()->setAlignment(Qt::AlignTop);
 
-        connect(destroyEntityButton, SIGNAL(pressed()), this, SLOT(destroyEntityPressed()));
-        connect(addComponentButton, SIGNAL(pressed()), this, SIGNAL(addComponent()));
+        connect(destroyEntityButton, SIGNAL(clicked()), this, SLOT(destroyEntityPressed()));
+        connect(addComponentButton, SIGNAL(clicked()), this, SIGNAL(addComponent()));
         connect(entityNameEdit, SIGNAL(textEdited(const QString &)), this, SIGNAL(updateEntityName(const QString &)));
 
         setEntity({});
@@ -113,38 +109,7 @@ public:
             else
                 entityNameEdit->setText("Unnamed Entity");
 
-            if (entity.checkComponent<AudioListenerComponent>()) {
-
-            }
-
-            if (entity.checkComponent<AudioSourceComponent>()) {
-            }
-
-            if (entity.checkComponent<TransformComponent>()) {
-                auto *widget = new TransformComponentWidget(this);
-                widget->set(value.getComponent<TransformComponent>());
-                connect(widget,
-                        SIGNAL(destroyPressed()),
-                        this,
-                        SLOT(destroyPressed()));
-                connect(widget, SIGNAL(valueChanged(const TransformComponent &)), this,
-                        SLOT(valueChanged(const TransformComponent &)));
-                addComponentWidget(widget);
-                components[typeid(TransformComponent)] = widget;
-            }
-
-            if (entity.checkComponent<CanvasTransformComponent>()) {
-                auto *widget = new CanvasTransformComponentWidget(this);
-                widget->set(value.getComponent<CanvasTransformComponent>());
-                connect(widget,
-                        SIGNAL(destroyPressed()),
-                        this,
-                        SLOT(destroyPressed()));
-                connect(widget, SIGNAL(valueChanged(const CanvasTransformComponent &)), this,
-                        SLOT(valueChanged(const CanvasTransformComponent &)));
-                addComponentWidget(widget);
-                components[typeid(CanvasTransformComponent)] = widget;
-            }
+            createComponentWidgets();
 
             componentParent->layout()->addWidget(addComponentContainer);
 
@@ -188,17 +153,22 @@ private slots:
 
     void destroyPressed() {
         auto *sen = dynamic_cast<ComponentWidget *>(sender());
-        auto type = sen->getType();
-        if (type == typeid(ComponentWidget)) {
-            // User defined component type
-        } else if (type == typeid(TransformComponentWidget)) {
-            emit destroyComponent(typeid(TransformComponent));
-        } else if (type == typeid(CanvasTransformComponentWidget)) {
-            emit destroyComponent(typeid(CanvasTransformComponent));
-        }
+        emit destroyComponent(sen->getComponentType());
+    }
+
+    void valueChanged(const AudioListenerComponent &value) {
+        emit updateComponent(value);
     }
 
     void valueChanged(const AudioSourceComponent &value) {
+        emit updateComponent(value);
+    }
+
+    void valueChanged(const ButtonComponent &value) {
+        emit updateComponent(value);
+    }
+
+    void valueChanged(const CameraComponent &value) {
         emit updateComponent(value);
     }
 
@@ -210,7 +180,19 @@ private slots:
         emit updateComponent(value);
     }
 
+    void valueChanged(const LightComponent &value) {
+        emit updateComponent(value);
+    }
+
+    void valueChanged(const MeshRenderComponent &value) {
+        emit updateComponent(value);
+    }
+
     void valueChanged(const RigidBodyComponent &value) {
+        emit updateComponent(value);
+    }
+
+    void valueChanged(const SkyboxComponent &value) {
         emit updateComponent(value);
     }
 
@@ -222,6 +204,10 @@ private slots:
         emit updateComponent(value);
     }
 
+    void valueChanged(const TextComponent &value) {
+        emit updateComponent(value);
+    }
+
     void valueChanged(const TransformComponent &value) {
         emit updateComponent(value);
     }
@@ -230,6 +216,8 @@ private:
     void addComponentWidget(ComponentWidget *widget) {
         componentParent->layout()->addWidget(widget);
     }
+
+    void createComponentWidgets();
 
     xng::Entity entity;
 
