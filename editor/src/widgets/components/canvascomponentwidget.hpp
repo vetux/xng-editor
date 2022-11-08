@@ -37,7 +37,7 @@ public:
 
         projectionSizeWidget = new Vector2Widget;
 
-        lockViewportWidget = new QCheckBox;
+        overrideViewportWidget = new QCheckBox;
         stretchViewportWidget = new QCheckBox;
         lockAspectRatioWidget = new QCheckBox;
 
@@ -45,7 +45,7 @@ public:
         clearColorWidget = new ColorWidget;
         layerWidget = new QSpinBox;
 
-        lockViewportWidget->setText("Lock Viewport");
+        overrideViewportWidget->setText("Override Viewport");
         stretchViewportWidget->setText("Stretch Viewport");
         lockAspectRatioWidget->setText("Lock Aspect Ratio");
 
@@ -59,6 +59,8 @@ public:
         layout()->addWidget(new QLabel("Camera Position:"));
         layout()->addWidget(cameraPositionWidget);
 
+        layout()->addWidget(overrideViewportWidget);
+
         layout()->addWidget(new QLabel("Viewport Size:"));
         layout()->addWidget(viewportSizeWidget);
         layout()->addWidget(new QLabel("Viewport Offset:"));
@@ -67,7 +69,6 @@ public:
         layout()->addWidget(new QLabel("Projection Size:"));
         layout()->addWidget(projectionSizeWidget);
 
-        layout()->addWidget(lockViewportWidget);
         layout()->addWidget(stretchViewportWidget);
         layout()->addWidget(lockAspectRatioWidget);
 
@@ -96,10 +97,10 @@ public:
                 this,
                 SLOT(projectionSizeChanged(const Vec2f &)));
 
-        connect(lockViewportWidget,
+        connect(overrideViewportWidget,
                 SIGNAL(stateChanged(int)),
                 this,
-                SLOT(lockViewportChanged(int)));
+                SLOT(overrideViewportChanged(int)));
         connect(stretchViewportWidget,
                 SIGNAL(stateChanged(int)),
                 this,
@@ -131,7 +132,7 @@ public:
         viewportSizeWidget->set(value.viewportSize.convert<float>());
         viewportOffsetWidget->set(value.viewportOffset.convert<float>());
         projectionSizeWidget->set(value.projectionSize.convert<float>());
-        lockViewportWidget->setChecked(value.lockViewport);
+        overrideViewportWidget->setChecked(value.overrideViewport);
         stretchViewportWidget->setChecked(value.stretchViewport);
         lockAspectRatioWidget->setChecked(value.lockAspectRatio);
         clearWidget->setChecked(value.clear);
@@ -184,8 +185,8 @@ private slots:
         emit valueChanged(component);
     }
 
-    void lockViewportChanged(int state) {
-        component.lockViewport = state == Qt::Checked;
+    void overrideViewportChanged(int state) {
+        component.overrideViewport = state == Qt::Checked;
         emit valueChanged(component);
     }
 
@@ -222,7 +223,7 @@ private:
     Vector2Widget *viewportOffsetWidget;
     Vector2Widget *projectionSizeWidget;
 
-    QCheckBox *lockViewportWidget;
+    QCheckBox *overrideViewportWidget;
     QCheckBox *stretchViewportWidget;
     QCheckBox *lockAspectRatioWidget;
 

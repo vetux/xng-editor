@@ -143,12 +143,29 @@ namespace xng {
                     }
                     if (frameSizeChanged) {
                         target->setColorAttachments({});
+                        RenderTargetDesc rdesc;
+                        rdesc.size = frameSize;
+                        rdesc.numberOfColorAttachments = 1;
+                        target = device->createRenderTarget(rdesc);
                         TextureBufferDesc desc;
                         desc.size = frameSize;
                         desc.bufferType = HOST_VISIBLE;
                         texture = device->createTextureBuffer(desc);
                         target->setColorAttachments({*texture});
                         frameSizeChanged = false;
+                        ecs.stop();
+                        ecs.setSystems({});
+                        frameGraphRenderer = std::make_unique<FrameGraphRenderer>(*target,
+                                                                                  std::make_unique<FrameGraphPoolAllocator>(
+                                                                                          *device,
+                                                                                          *shaderCompiler,
+                                                                                          *shaderDecompiler));
+
+                        canvasRenderSystem = std::make_unique<CanvasRenderSystem>(*ren2d, *target, *fontDriver);
+                        meshRenderSystem = std::make_unique<MeshRenderSystem>(*frameGraphRenderer);
+                        canvasRenderSystem->setDrawDebugGeometry(true);
+                        ecs.setSystems({*canvasRenderSystem, *meshRenderSystem});
+                        ecs.start();
                     }
                     ecs.update(deltaTime);
 
