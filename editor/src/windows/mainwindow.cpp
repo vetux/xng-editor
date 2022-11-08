@@ -547,6 +547,7 @@ void MainWindow::loadScene(const std::filesystem::path &path) {
         auto prot = JsonProtocol();
         std::ifstream fs(path.string());
         *scene << prot.deserialize(fs);
+        scenePath = path;
         sceneSaved = true;
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
