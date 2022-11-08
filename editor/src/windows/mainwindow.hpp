@@ -99,7 +99,7 @@ protected slots:
 
     void openScene();
 
-    void saveScene();
+    bool saveScene();
 
     void saveSceneAs();
 
@@ -141,7 +141,7 @@ private:
 
     void loadProject(const std::filesystem::path &path);
 
-    void checkUnsavedSceneChanges();
+    bool checkUnsavedSceneChanges();
 
     void addRecentProject(const std::string &path);
 

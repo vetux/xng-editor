@@ -340,7 +340,10 @@ void MainWindow::openSettings() {
 }
 
 void MainWindow::newProject() {
-    checkUnsavedSceneChanges();
+    if (!checkUnsavedSceneChanges()) {
+        QMessageBox::information(this, "Aborted", "The operation was cancelled, no project created.");
+        return;
+    }
 
     QFileDialog dialog;
     dialog.setWindowTitle("Select output directory for new project...");
@@ -368,7 +371,10 @@ void MainWindow::newProject() {
 }
 
 void MainWindow::openProject() {
-    checkUnsavedSceneChanges();
+    if(!checkUnsavedSceneChanges()){
+        QMessageBox::information(this, "Aborted", "The operation was cancelled, no project opened.");
+        return;
+    }
 
     QFileDialog dialog;
     dialog.setWindowTitle("Select project to open...");
@@ -383,7 +389,10 @@ void MainWindow::openProject() {
 }
 
 void MainWindow::openRecentProject() {
-    checkUnsavedSceneChanges();
+    if (!checkUnsavedSceneChanges()){
+        QMessageBox::information(this, "Aborted", "The operation was cancelled, no project opened.");
+        return;
+    }
     auto *ptr = sender();
     loadProject(recentProjectActions.at(dynamic_cast<QAction *>(ptr)));
 }
@@ -400,7 +409,10 @@ void MainWindow::openProjectSettings() {
 }
 
 void MainWindow::newScene() {
-    checkUnsavedSceneChanges();
+    if (!checkUnsavedSceneChanges()){
+        QMessageBox::information(this, "Aborted", "The operation was cancelled, no scene created.");
+        return;
+    }
 
     scenePath = "";
     scene->clear();
@@ -409,7 +421,10 @@ void MainWindow::newScene() {
 }
 
 void MainWindow::openScene() {
-    checkUnsavedSceneChanges();
+    if (!checkUnsavedSceneChanges()){
+        QMessageBox::information(this, "Aborted", "The operation was cancelled, no scene opened.");
+        return;
+    }
 
     QFileDialog dialog;
     dialog.setWindowTitle("Select scene file...");
@@ -424,7 +439,7 @@ void MainWindow::openScene() {
     }
 }
 
-void MainWindow::saveScene() {
+bool MainWindow::saveScene() {
     if (!sceneSaved) {
         if (scenePath.empty()) {
             QFileDialog dialog;
@@ -437,6 +452,8 @@ void MainWindow::saveScene() {
             if (dialog.exec() == QFileDialog::Accepted) {
                 auto &file = dialog.selectedFiles().at(0);
                 scenePath = std::filesystem::path(file.toStdString());
+            } else {
+                return false;
             }
         }
         Message msg;
@@ -447,6 +464,7 @@ void MainWindow::saveScene() {
         sceneSaved = true;
         updateActions();
     }
+    return true;
 }
 
 void MainWindow::saveSceneAs() {
@@ -556,15 +574,16 @@ void MainWindow::loadProject(const std::filesystem::path &path) {
     }
 }
 
-void MainWindow::checkUnsavedSceneChanges() {
+bool MainWindow::checkUnsavedSceneChanges() {
     if (!sceneSaved) {
         if (QMessageBox::question(this,
                                   "Unsaved Scene Changes",
                                   "Your scene has unsaved changes, do you want to save them now?")
             == QMessageBox::Yes) {
-            saveScene();
+            return saveScene();
         }
     }
+    return true;
 }
 
 void MainWindow::addRecentProject(const std::string &path) {
