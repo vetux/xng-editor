@@ -326,6 +326,7 @@ void MainWindow::updateComponent(const Entity &entity, const Component &value) {
     std::lock_guard<std::mutex> guard(*sceneMutex);
     scene->updateComponent(entity.getHandle(), value);
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::destroyComponent(const Entity &entity, std::type_index type) {
@@ -417,6 +418,7 @@ void MainWindow::newScene() {
     scene->clear();
 
     sceneSaved = true;
+    updateActions();
 }
 
 void MainWindow::openScene() {
@@ -549,6 +551,7 @@ void MainWindow::loadScene(const std::filesystem::path &path) {
         *scene << prot.deserialize(fs);
         scenePath = path;
         sceneSaved = true;
+        updateActions();
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Scene load failed",
@@ -671,26 +674,32 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 void MainWindow::onEntityCreate(const EntityHandle &entity) {
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::onEntityDestroy(const EntityHandle &entity) {
     sceneSaved = false;
+    updateActions();
 }
 
 void
 MainWindow::onEntityNameChanged(const EntityHandle &entity, const std::string &newName, const std::string &oldName) {
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::onComponentCreate(const EntityHandle &entity, const Component &component) {
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::onComponentDestroy(const EntityHandle &entity, const Component &component) {
     sceneSaved = false;
+    updateActions();
 }
 
 void MainWindow::onComponentUpdate(const EntityHandle &entity, const Component &oldComponent,
                                    const Component &newComponent) {
     sceneSaved = false;
+    updateActions();
 }
