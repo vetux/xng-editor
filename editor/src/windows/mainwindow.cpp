@@ -578,7 +578,7 @@ bool MainWindow::checkUnsavedSceneChanges() {
     if (!sceneSaved) {
         if (QMessageBox::question(this,
                                   "Unsaved Scene Changes",
-                                  "Your scene has unsaved changes, do you want to save them now?")
+                                  "Your scene contains unsaved changes that are going to be overwritten, do you want to save them now?")
             == QMessageBox::Yes) {
             return saveScene();
         }
