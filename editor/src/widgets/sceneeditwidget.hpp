@@ -272,7 +272,7 @@ public:
     }
 
     void onEntityDestroy(const EntityHandle &entity) override {
-        if (entity == selectedEntity.getHandle()) {
+        if (selectedEntity && entity == selectedEntity.getHandle()) {
             selectedEntity = {};
             entityEditWidget->setEntity(selectedEntity);
         }

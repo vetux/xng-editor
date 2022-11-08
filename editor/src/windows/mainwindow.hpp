@@ -38,7 +38,7 @@
 
 #include "project/project.hpp"
 
-class MainWindow : public QMainWindow {
+class MainWindow : public QMainWindow, EntityScene::Listener {
 Q_OBJECT
 public:
     struct Actions {
@@ -54,6 +54,8 @@ public:
         QMenu *sceneMenu;
         QAction *sceneNewAction;
         QAction *sceneOpenAction;
+        QAction *sceneSaveAsAction;
+        QAction *sceneSaveAction;
 
         QMenu *buildMenu;
         QAction *buildProjectAction;
@@ -97,6 +99,10 @@ protected slots:
 
     void openScene();
 
+    void saveScene();
+
+    void saveSceneAs();
+
     void buildProject();
 
     void openBuildSettings();
@@ -104,6 +110,21 @@ protected slots:
     void shutdown();
 
     void closeEvent(QCloseEvent *event) override;
+
+private:
+    void onEntityCreate(const EntityHandle &entity) override;
+
+    void onEntityDestroy(const EntityHandle &entity) override;
+
+    void
+    onEntityNameChanged(const EntityHandle &entity, const std::string &newName, const std::string &oldName) override;
+
+    void onComponentCreate(const EntityHandle &entity, const Component &component) override;
+
+    void onComponentDestroy(const EntityHandle &entity, const Component &component) override;
+
+    void onComponentUpdate(const EntityHandle &entity, const Component &oldComponent,
+                           const Component &newComponent) override;
 
 private:
     void keyPressEvent(QKeyEvent *event) override;
@@ -117,8 +138,6 @@ private:
     void saveStateFile();
 
     void loadScene(const std::filesystem::path &path);
-
-    void saveScene();
 
     void loadProject(const std::filesystem::path &path);
 

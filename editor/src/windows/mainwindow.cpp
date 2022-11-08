@@ -57,9 +57,13 @@ MainWindow::Actions::Actions(QWidget *parent) {
     sceneMenu = new QMenu("Scene", parent);
     sceneNewAction = new QAction("New...", parent);
     sceneOpenAction = new QAction("Open...", parent);
+    sceneSaveAsAction = new QAction("Save As...", parent);
+    sceneSaveAction = new QAction("Save", parent);
 
     sceneMenu->addAction(sceneNewAction);
     sceneMenu->addAction(sceneOpenAction);
+    sceneMenu->addAction(sceneSaveAsAction);
+    sceneMenu->addAction(sceneSaveAction);
 
     buildMenu = new QMenu("Build", parent);
     buildProjectAction = new QAction("Build Project...", parent);
@@ -67,12 +71,17 @@ MainWindow::Actions::Actions(QWidget *parent) {
 
     buildMenu->addAction(buildProjectAction);
     buildMenu->addAction(buildSettingsAction);
+
+    projectSaveAction->setShortcut(QKeySequence::Save);
+    sceneSaveAction->setShortcut(QKeySequence::Save);
 }
 
 MainWindow::MainWindow() : QMainWindow(),
                            actions(this),
                            sceneMutex(std::make_unique<std::mutex>()) {
     scene = std::make_shared<EntityScene>();
+
+    scene->addListener(*this);
 
     rootWidget = new QWidget(this);
 
@@ -175,6 +184,15 @@ MainWindow::MainWindow() : QMainWindow(),
             SIGNAL(triggered(bool)),
             this,
             SLOT(openScene()));
+    connect(actions.sceneSaveAction,
+            SIGNAL(triggered(bool)),
+            this,
+            SLOT(saveScene()));
+    connect(actions.sceneSaveAsAction,
+            SIGNAL(triggered(bool)),
+            this,
+            SLOT(saveSceneAs()));
+
 
     connect(actions.buildProjectAction,
             SIGNAL(triggered(bool)),
@@ -384,18 +402,10 @@ void MainWindow::openProjectSettings() {
 void MainWindow::newScene() {
     checkUnsavedSceneChanges();
 
-    QFileDialog dialog;
-    dialog.setWindowTitle("Select scene output file...");
-    dialog.setAcceptMode(QFileDialog::AcceptOpen);
-    dialog.setFileMode(QFileDialog::AnyFile);
-    dialog.setDirectory(project.getDirectory().c_str());
-    dialog.setMimeTypeFilters({"application/json"});
+    scenePath = "";
+    scene->clear();
 
-    if (dialog.exec() == QFileDialog::Accepted) {
-        auto &file = dialog.selectedFiles().at(0);
-        scenePath = std::filesystem::path(file.toStdString());
-        scene->clear();
-    }
+    sceneSaved = true;
 }
 
 void MainWindow::openScene() {
@@ -411,6 +421,47 @@ void MainWindow::openScene() {
     if (dialog.exec() == QFileDialog::Accepted) {
         auto &file = dialog.selectedFiles().at(0);
         loadScene(file.toStdString());
+    }
+}
+
+void MainWindow::saveScene() {
+    if (!sceneSaved) {
+        if (scenePath.empty()) {
+            QFileDialog dialog;
+            dialog.setWindowTitle("Select scene output file...");
+            dialog.setAcceptMode(QFileDialog::AcceptOpen);
+            dialog.setFileMode(QFileDialog::AnyFile);
+            dialog.setDirectory(project.getDirectory().c_str());
+            dialog.setMimeTypeFilters({"application/json"});
+
+            if (dialog.exec() == QFileDialog::Accepted) {
+                auto &file = dialog.selectedFiles().at(0);
+                scenePath = std::filesystem::path(file.toStdString());
+            }
+        }
+        Message msg;
+        *scene >> msg;
+        auto p = JsonProtocol();
+        std::ofstream fs(scenePath.string());
+        p.serialize(fs, msg);
+        sceneSaved = true;
+        updateActions();
+    }
+}
+
+void MainWindow::saveSceneAs() {
+    QFileDialog dialog;
+    dialog.setWindowTitle("Select scene output file...");
+    dialog.setAcceptMode(QFileDialog::AcceptOpen);
+    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setDirectory(project.getDirectory().c_str());
+    dialog.setMimeTypeFilters({"application/json"});
+
+    if (dialog.exec() == QFileDialog::Accepted) {
+        auto &file = dialog.selectedFiles().at(0);
+        sceneSaved = false;
+        scenePath = std::filesystem::path(file.toStdString());
+        saveScene();
     }
 }
 
@@ -479,23 +530,11 @@ void MainWindow::loadScene(const std::filesystem::path &path) {
         auto prot = JsonProtocol();
         std::ifstream fs(path.string());
         *scene << prot.deserialize(fs);
+        sceneSaved = true;
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Scene load failed",
                              ("Failed to load scene at " + QString(path.string().c_str()) + " Error: " + e.what()));
-    }
-}
-
-void MainWindow::saveScene() {
-    if (!sceneSaved
-        && !scenePath.empty()) {
-        Message msg;
-        *scene >> msg;
-        auto p = JsonProtocol();
-        std::ofstream fs(scenePath.string());
-        p.serialize(fs, msg);
-        sceneSaved = true;
-        updateActions();
     }
 }
 
@@ -523,18 +562,6 @@ void MainWindow::checkUnsavedSceneChanges() {
                                   "Unsaved Scene Changes",
                                   "Your scene has unsaved changes, do you want to save them now?")
             == QMessageBox::Yes) {
-            if (scenePath.empty()) {
-                QFileDialog dialog;
-                dialog.setAcceptMode(QFileDialog::AcceptSave);
-                dialog.setFileMode(QFileDialog::AnyFile);
-                dialog.setMimeTypeFilters({"application/json"});
-                if (dialog.exec() == QFileDialog::Accepted) {
-                    auto file = dialog.selectedFiles().at(0);
-                    scenePath = file.toStdString();
-                } else {
-                    return;
-                }
-            }
             saveScene();
         }
     }
@@ -616,8 +643,35 @@ void MainWindow::saveRecentProjects() {
 
 void MainWindow::updateActions() {
     actions.projectSaveAction->setEnabled(project.isLoaded() && (!sceneSaved || !projectSaved));
+    actions.sceneSaveAction->setEnabled(!sceneSaved && !scenePath.empty());
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
     shutdown();
+}
+
+void MainWindow::onEntityCreate(const EntityHandle &entity) {
+    sceneSaved = false;
+}
+
+void MainWindow::onEntityDestroy(const EntityHandle &entity) {
+    sceneSaved = false;
+}
+
+void
+MainWindow::onEntityNameChanged(const EntityHandle &entity, const std::string &newName, const std::string &oldName) {
+    sceneSaved = false;
+}
+
+void MainWindow::onComponentCreate(const EntityHandle &entity, const Component &component) {
+    sceneSaved = false;
+}
+
+void MainWindow::onComponentDestroy(const EntityHandle &entity, const Component &component) {
+    sceneSaved = false;
+}
+
+void MainWindow::onComponentUpdate(const EntityHandle &entity, const Component &oldComponent,
+                                   const Component &newComponent) {
+    sceneSaved = false;
 }
