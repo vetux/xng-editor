@@ -27,6 +27,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QCoreApplication>
+#include <utility>
 
 #include "offscreenrenderer.hpp"
 
@@ -36,7 +37,7 @@ public:
     class RenderEvent : public QEvent {
     public:
         float deltaTime;
-        QImage image;
+        std::shared_ptr<ImageRGBA> image;
 
         RenderEvent() : QEvent(Type::None) {}
     };
@@ -55,14 +56,10 @@ public:
         l->addWidget(scroll);
         setLayout(l);
 
-        ren.setListener([this](float deltaTime, const ImageRGBA &img) {
+        ren.setListener([this](float deltaTime, std::shared_ptr<ImageRGBA> img) {
             auto *event = new RenderEvent();
             event->deltaTime = deltaTime;
-            event->image = QImage((const uchar *) img.getData(),
-                                  img.getWidth(),
-                                  img.getHeight(),
-                                  img.getWidth() * sizeof(ColorRGBA),
-                                  QImage::Format_RGBA8888);
+            event->image = std::move(img);
             QCoreApplication::postEvent(this, event);
         });
     }
@@ -78,7 +75,11 @@ protected:
         if (event->type() == QEvent::None) {
             try {
                 auto &ev = dynamic_cast<RenderEvent &>(*event);
-                label->setPixmap(QPixmap::fromImage(ev.image));
+                label->setPixmap(QPixmap::fromImage(QImage((const uchar *) ev.image->getData(),
+                                                           ev.image->getWidth(),
+                                                           ev.image->getHeight(),
+                                                           ev.image->getWidth() * sizeof(ColorRGBA),
+                                                           QImage::Format_RGBA8888)));
             } catch (...) {}
         }
         return QWidget::event(event);

@@ -17,12 +17,15 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef XEDITOR_FILEBROWSER_HPP
-#define XEDITOR_FILEBROWSER_HPP
+#ifndef XEDITOR_FILEBROWSERWIDGET_HPP
+#define XEDITOR_FILEBROWSERWIDGET_HPP
 
 #include <QWidget>
-#include <QListWidget>
+#include <QTreeView>
+#include <QFileSystemModel>
+#include <QFileIconProvider>
 #include <QVBoxLayout>
+#include <QLabel>
 
 #include <filesystem>
 
@@ -33,20 +36,30 @@ public:
     explicit FileBrowserWidget(QWidget *parent)
             : QWidget(parent) {
         setLayout(new QVBoxLayout());
-        listWidget = new QListWidget(this);
-        layout()->addWidget(listWidget);
+        tree = new QTreeView(this);
+        layout()->addWidget(tree);
         layout()->setMargin(0);
+        model.setIconProvider(&iconProvider);
+        model.setRootPath("");
+        model.setOption(QFileSystemModel::DontUseCustomDirectoryIcons);
+        //model.setOption(QFileSystemModel::DontWatchForChanges);
+        tree->setModel(&model);
     }
 
-    void setCurrentPath(const std::string &value) {
+    void setCurrentPath(const std::filesystem::path &value) {
         currentPath = value;
+        QString v = value.string().c_str();
+        model.setRootPath(v);
+        auto i = model.index(v);
+        tree->setRootIndex(i);
     }
 
-    const std::string &getCurrentPath() {
-        return currentPath;
+    std::filesystem::path getCurrentPath() {
+        return model.rootPath().toStdString().c_str();
     }
 
 signals:
+
     void openMaterial(const std::filesystem::path &path);
 
     void openShader(const std::filesystem::path &path);
@@ -60,8 +73,10 @@ signals:
     void openSpriteAnimation(const std::filesystem::path &path);
 
 private:
-    std::string currentPath;
-    QListWidget *listWidget;
+    std::filesystem::path currentPath;
+    QTreeView *tree;
+    QFileSystemModel model;
+    QFileIconProvider iconProvider;
 };
 
-#endif //XEDITOR_FILEBROWSER_HPP
+#endif //XEDITOR_FILEBROWSERWIDGET_HPP

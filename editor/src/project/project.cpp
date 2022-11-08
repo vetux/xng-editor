@@ -32,7 +32,7 @@ void Project::create(const std::filesystem::path &outputDir, const std::filesyst
     if (!std::filesystem::is_empty(outputDir)) {
         throw std::runtime_error("Output directory is not empty.");
     }
-    std::filesystem::copy(templateDir, outputDir);
+    std::filesystem::copy(templateDir, outputDir, std::filesystem::copy_options::recursive);
 }
 
 void Project::load(const std::filesystem::path &file) {

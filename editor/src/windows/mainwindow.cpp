@@ -563,12 +563,13 @@ void MainWindow::loadProject(const std::filesystem::path &path) {
     scene->clear();
     try {
         project.load(path.parent_path());
-        setWindowTitle(project.getSettings().name.c_str());
+        setWindowTitle(QString(project.getSettings().name.c_str()) + " - " + QString(path.string().c_str()));
         QMessageBox::information(this, "Project opened",
                                  ("Successfully opened " + project.getSettings().name).c_str());
         projectSaved = true;
         updateActions();
         addRecentProject(path.string());
+        fileBrowserWidget->setCurrentPath(path.parent_path());
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Project load failed",

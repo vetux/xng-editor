@@ -32,7 +32,7 @@
 #include "widgets/scenerenderwidget.hpp"
 #include "widgets/sceneeditwidget.hpp"
 #include "widgets/entityeditwidget.hpp"
-#include "widgets/filebrowser.hpp"
+#include "widgets/filebrowserwidget.hpp"
 
 #include "windows/projectbuilddialog.hpp"
 

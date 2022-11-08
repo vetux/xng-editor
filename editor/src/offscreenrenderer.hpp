@@ -32,7 +32,7 @@ namespace xng {
      */
     class OffscreenRenderer {
     public:
-        typedef std::function<void(float, const ImageRGBA &)> Listener;
+        typedef std::function<void(float, std::shared_ptr<ImageRGBA>)> Listener;
 
         explicit OffscreenRenderer(float frameRate,
                                    Vec2i frameSize)
@@ -98,7 +98,7 @@ namespace xng {
             layoutChanged = true;
         }
 
-        ImageRGBA getFrame() {
+        std::shared_ptr<ImageRGBA> getFrame() {
             std::lock_guard<std::mutex> guard(mutex);
             return frame;
         }
@@ -151,7 +151,7 @@ namespace xng {
                         frameSizeChanged = false;
                     }
                     ecs.update(deltaTime);
-                    frame = texture->download();
+                    frame = std::make_shared<ImageRGBA>(texture->download());
                 } catch (...) {
                     {
                         std::lock_guard<std::mutex> guard(mutex);
@@ -216,7 +216,7 @@ namespace xng {
 
         ECS ecs;
 
-        ImageRGBA frame;
+        std::shared_ptr<ImageRGBA> frame;
 
         std::exception_ptr exception = nullptr;
 
