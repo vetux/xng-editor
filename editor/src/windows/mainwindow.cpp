@@ -428,7 +428,7 @@ void MainWindow::openScene() {
     }
 
     QFileDialog dialog;
-    dialog.setWindowTitle("Select scene file...");
+    dialog.setWindowTitle("Select scene file to open...");
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setFileMode(QFileDialog::AnyFile);
     dialog.setDirectory(project.getDirectory().c_str());
