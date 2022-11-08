@@ -398,7 +398,6 @@ void MainWindow::openRecentProject() {
 }
 
 void MainWindow::saveProject() {
-    saveScene();
     project.save();
     projectSaved = true;
     updateActions();

@@ -139,7 +139,8 @@ public:
                 SLOT(bottomChanged(double)));
     }
 
-    void setValue(const Camera &camera) {
+    void setValue(const Camera &c) {
+        camera = c;
         fovWidget->setVisible(camera.type == xng::PERSPECTIVE);
         aspectRatioWidget->setVisible(camera.type == xng::PERSPECTIVE);
 
