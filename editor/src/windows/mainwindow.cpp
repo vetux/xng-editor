@@ -363,24 +363,21 @@ void MainWindow::newProject() {
     dialog.setWindowTitle("Select output directory for new project...");
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setFileMode(QFileDialog::Directory);
-    if (dialog.exec() == QFileDialog::Accepted) {
+    while (dialog.exec() == QFileDialog::Accepted) {
         auto dir = dialog.selectedFiles().at(0);
         auto path = std::filesystem::path(dir.toStdString());
         if (!std::filesystem::is_empty(path)) {
-            if (QMessageBox::question(this, "Overwrite Existing files", ("Directory " + path.string() +
-                                                                         " is not empty, do you wish to overwrite the existing contents?").c_str())
-                != QMessageBox::Yes) {
-                QMessageBox::information(this, "Cancelled", "The project creation was cancelled.");
-                return;
-            } else {
-                for (const auto &entry: std::filesystem::directory_iterator(path))
-                    std::filesystem::remove_all(entry.path());
-            }
+            QMessageBox::warning(this, "Invalid Directory", ("Directory "
+                                                                 + QString(path.string().c_str())
+                                                                 +
+                                                                 " has existing contents, please select a writeable empty directory."));
+        } else {
+            Project::create(std::filesystem::path(dir.toStdString()),
+                            std::filesystem::path(Paths::projectTemplatePath().string()));
+            path.append(Paths::projectSettingsFilename().toStdString().c_str());
+            loadProject(path);
+            break;
         }
-        Project::create(std::filesystem::path(dir.toStdString()),
-                        std::filesystem::path(Paths::projectTemplatePath().string()));
-        path.append(Paths::projectSettingsFilename().toStdString().c_str());
-        loadProject(path);
     }
 }
 
@@ -690,7 +687,7 @@ void MainWindow::openPath(const std::filesystem::path &path) {
     if (path.filename().string().c_str() == Paths::projectSettingsFilename()) {
         // Open project
         loadProject(path);
-    } else if (path.extension().string() == ".json") {
+    } else if (path.extension().string() == ".xbundle") {
         // Open / Edit resource bundle
         std::ifstream fs(path);
         auto str = std::string(std::istream_iterator<char>(fs),
@@ -698,14 +695,11 @@ void MainWindow::openPath(const std::filesystem::path &path) {
         std::vector<char> vec;
         vec.insert(vec.begin(), str.begin(), str.end());
         auto bundle = JsonParser().read(vec, path.extension(), nullptr);
-        for (auto &pair: bundle.assets) {
-            if (pair.second->getTypeIndex() == typeid(EntityScene)) {
-                if (QMessageBox::question(this, "Open Scene",
-                                          "Do you want to open the scene at: " + QString(path.string().c_str()) + " ?")
-                    == QMessageBox::Yes) {
-                    loadScene(path);
-                }
-            }
+    } else if (path.extension().string() == ".xscene") {
+        if (QMessageBox::question(this, "Open Scene",
+                                  "Do you want to open the scene at: " + QString(path.string().c_str()) + " ?")
+            == QMessageBox::Yes) {
+            loadScene(path);
         }
     } else {
         QMessageBox::information(this, "Unrecognized file",
