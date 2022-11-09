@@ -38,14 +38,14 @@ public:
         projectionSizeWidget = new Vector2Widget;
 
         overrideViewportWidget = new QCheckBox;
-        stretchViewportWidget = new QCheckBox;
+        fitViewportWidget = new QCheckBox;
 
         clearWidget = new QCheckBox;
         clearColorWidget = new ColorWidget;
         layerWidget = new QSpinBox;
 
         overrideViewportWidget->setText("Override Viewport");
-        stretchViewportWidget->setText("Stretch Viewport");
+        fitViewportWidget->setText("Fit Viewport");
 
         clearWidget->setText("Clear");
 
@@ -69,7 +69,7 @@ public:
         layout()->addWidget(viewportOffsetWidget);
 
         layout()->addWidget(overrideViewportWidget);
-        layout()->addWidget(stretchViewportWidget);
+        layout()->addWidget(fitViewportWidget);
 
         connect(cameraPositionWidget,
                 SIGNAL(valueChanged(const Vec2f &)),
@@ -94,10 +94,10 @@ public:
                 SIGNAL(stateChanged(int)),
                 this,
                 SLOT(overrideViewportChanged(int)));
-        connect(stretchViewportWidget,
+        connect(fitViewportWidget,
                 SIGNAL(stateChanged(int)),
                 this,
-                SLOT(stretchViewportChanged(int)));
+                SLOT(fitViewportChanged(int)));
 
         connect(clearWidget,
                 SIGNAL(stateChanged(int)),
@@ -122,7 +122,7 @@ public:
         viewportOffsetWidget->set(value.viewportOffset.convert<float>());
         projectionSizeWidget->set(value.projectionSize.convert<float>());
         overrideViewportWidget->setChecked(value.overrideViewport);
-        stretchViewportWidget->setChecked(value.stretchViewport);
+        fitViewportWidget->setChecked(value.fitViewport);
         clearWidget->setChecked(value.clear);
         clearColorWidget->setColor(value.clearColor);
         layerWidget->setValue(value.layer);
@@ -178,8 +178,8 @@ private slots:
         emit valueChanged(component);
     }
 
-    void stretchViewportChanged(int state) {
-        component.stretchViewport = state == Qt::Checked;
+    void fitViewportChanged(int state) {
+        component.fitViewport = state == Qt::Checked;
         emit valueChanged(component);
     }
 
@@ -207,7 +207,7 @@ private:
     Vector2Widget *projectionSizeWidget;
 
     QCheckBox *overrideViewportWidget;
-    QCheckBox *stretchViewportWidget;
+    QCheckBox *fitViewportWidget;
 
     QCheckBox *clearWidget;
     ColorWidget *clearColorWidget;
