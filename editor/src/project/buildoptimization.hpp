@@ -21,7 +21,7 @@
 #define XEDITOR_BUILDOPTIMIZATION_HPP
 
 enum BuildOptimization {
-    NONE,
+    NO_OPTIMIZATION,
     OPTIMIZE_ONE,
     OPTIMIZE_TWO,
     OPTIMIZE_THREE,
