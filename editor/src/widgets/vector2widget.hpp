@@ -45,8 +45,8 @@ public:
         layout()->addWidget(spinY);
         layout()->setMargin(0);
 
-        spinX->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
-        spinY->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+        spinX->setRange(-std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+        spinY->setRange(-std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 
         spinX->setMinimumWidth(10);
         spinY->setMinimumWidth(10);

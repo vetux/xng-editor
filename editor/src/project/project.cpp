@@ -35,28 +35,30 @@ void Project::create(const std::filesystem::path &outputDir, const std::filesyst
     std::filesystem::copy(templateDir, outputDir, std::filesystem::copy_options::recursive);
 }
 
-void Project::load(const std::filesystem::path &file) {
+void Project::load(const std::filesystem::path &dir) {
     unload();
 
     // Read and deserialize the settings object
-    auto settingsFile = file;
+    auto settingsFile = dir;
     settingsFile.append(Paths::projectSettingsFilename().toStdString());
     if (!std::filesystem::exists(settingsFile)) {
         throw std::runtime_error("Settings file " + settingsFile.string() + " not found.");
     }
-    auto prot = xng::JsonProtocol();
+
     std::ifstream fs(settingsFile.string());
-    auto msg = prot.deserialize(fs);
+    auto msg = xng::JsonProtocol().deserialize(fs);
     settings = {};
     settings << msg;
 
     // Create and register asset bundle archives
     for (auto &bundle: settings.assetBundles) {
-        auto bundleDir = file;
+        auto bundleDir = dir;
         bundleDir.append(bundle.directory);
         ResourceRegistry::getDefaultRegistry().addArchive(bundle.scheme,
                                                           std::make_shared<xng::DirectoryArchive>(bundleDir));
     }
+
+    directory = dir;
 }
 
 bool Project::unload() {
@@ -90,10 +92,18 @@ void Project::compile(const BuildSettings &settings) const {
 }
 
 void Project::save() const {
-    // Serialize and write settings object.
+    auto settingsFile = std::filesystem::path(directory).append(Paths::projectSettingsFilename().toStdString().c_str());
+    std::ofstream fs(settingsFile.string());
+    Message msg;
+    settings >> msg;
+    xng::JsonProtocol().serialize(fs, msg);
 }
 
 const ProjectSettings &Project::getSettings() const {
+    return settings;
+}
+
+ProjectSettings &Project::getSettings() {
     return settings;
 }
 

@@ -12,6 +12,12 @@
 
 using namespace xng;
 
-REGISTER_COMPONENT(ExampleComponent)
+extern "C" {
+EXPORT void load() {
+    REGISTER_COMPONENT(ExampleComponent)
+}
 
-REGISTER_SYSTEM(ExampleSystem)
+EXPORT void unload() {
+    UNREGISTER_COMPONENT(ExampleComponent)
+}
+}

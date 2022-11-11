@@ -72,6 +72,8 @@ public:
         tree->addAction(deleteAction);
         tree->addAction(createAction);
 
+        tree->setColumnWidth(0, 200);
+
         connect(tree,
                 SIGNAL(doubleClicked(const QModelIndex &)),
                 this,

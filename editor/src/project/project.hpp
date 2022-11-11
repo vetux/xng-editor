@@ -39,6 +39,14 @@ public:
      */
     static void create(const std::filesystem::path &outputDir, const std::filesystem::path &templateDir);
 
+    static std::filesystem::path getPluginDirectory(const std::filesystem::path &projectDir) {
+        return std::filesystem::path(projectDir).append(Paths::pluginDirectory().toStdString().c_str());
+    }
+
+    static std::filesystem::path getPluginLibraryFilePath(const std::filesystem::path &projectDir) {
+        return getPluginDirectory(projectDir).append(Paths::pluginLibraryFileName().toStdString().c_str());
+    }
+
     Project() = default;
 
     /**
@@ -75,6 +83,8 @@ public:
     void save() const;
 
     const ProjectSettings &getSettings() const;
+
+    ProjectSettings &getSettings();
 
     void setSettings(const ProjectSettings &settings);
 

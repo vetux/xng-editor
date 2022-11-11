@@ -29,55 +29,38 @@
 #include "project/buildplatform.hpp"
 
 #include "xng/io/messageable.hpp"
+#include "xng/io/library.hpp"
+
+#include "io/paths.hpp"
 
 using namespace xng;
 
 struct BuildSettings : public Messageable {
     std::string name{};
 
+    std::string cmakeCommand{}; // The command to use when invoking cmake
+
     BuildPlatform targetPlatform{};
     BuildOptimization optimization{};
 
-    std::string cmakeCommand{}; // The command to use when invoking cmake
-
-    std::filesystem::path buildDir{}; // The output directory relative to the project directory
+    std::string buildDir{}; // The output directory relative to the project directory
 
     std::string gameTargetName{}; // The name of the game cmake target
     std::string pluginTargetName{}; // The name of the plugin cmake target
-    std::set<std::filesystem::path> srcDirs{};
-    std::set<std::filesystem::path> incDirs{};
-    std::set<std::filesystem::path> lnkDirs{};
-    std::set<std::filesystem::path> pluginDirs{};
-    std::set<std::string> linkedLibraries{};
-
-    static QString combinePaths(const std::set<std::filesystem::path> &paths) {
-        QString ret;
-        for (auto &p: paths) {
-            ret += p.string().c_str();
-            ret += " ";
-        }
-        ret.remove(ret.size() - 1, 1);
-        return ret;
-    }
-
-    static QString combineLibraryNames(const std::set<std::string> &names) {
-        QString ret;
-        for (auto &str: names) {
-            ret += str.c_str();
-            ret += " ";
-        }
-        ret.remove(ret.size() - 1, 1);
-        return ret;
-    }
+    std::string srcDirs{}; // The source directories separated by spaces
+    std::string incDirs{}; // The include directories separated by spaces
+    std::string lnkDirs{}; // The link directories separated by spaces
+    std::string linkedLibraries{}; // The linked library names separated by spaces
 
     std::filesystem::path getBuildDirectory(const std::filesystem::path &projectDir) const {
-        return std::filesystem::path(projectDir).append(buildDir.string().c_str());
+        return std::filesystem::path(projectDir).append(buildDir.c_str());
     }
 
     void initialize(const std::filesystem::path &projectDir, std::string &output, std::string &error) const {
-        if (buildDir.is_absolute()) {
+        if (std::filesystem::path(buildDir).is_absolute()) {
             throw std::runtime_error("Build directory path cannot be absolute");
         }
+
         auto dir = getBuildDirectory(projectDir);
 
         std::filesystem::remove_all(dir); // Erase previous build contents
@@ -90,11 +73,10 @@ struct BuildSettings : public Messageable {
         process.setArguments({"..",
                               "-DEXE_NAME=" + QString(gameTargetName.c_str()),
                               "-DPLUGIN_NAME=" + QString(pluginTargetName.c_str()),
-                              "-DSRC_DIR=" + combinePaths(srcDirs),
-                              "-DINC_DIR=" + combinePaths(incDirs),
-                              "-DPLUGIN_DIR=" + combinePaths(pluginDirs),
-                              "-DLNK_DIR=" + combinePaths(lnkDirs),
-                              "-DLINK=" + combineLibraryNames(linkedLibraries)});
+                              "-DSRC_DIR=" + QString(srcDirs.c_str()),
+                              "-DINC_DIR=" + QString(incDirs.c_str()),
+                              "-DLNK_DIR=" + QString(lnkDirs.c_str()),
+                              "-DLINK=" + QString(linkedLibraries.c_str())});
         process.start();
         process.waitForFinished();
         output = process.readAllStandardOutput().toStdString();
@@ -107,27 +89,35 @@ struct BuildSettings : public Messageable {
         process.setWorkingDirectory(dir.string().c_str());
         process.setProgram(cmakeCommand.c_str());
         process.setArguments({"--build",
-                              "--target " + QString(gameTargetName.c_str())});
+                              ".",
+                              "--target",
+                              QString(gameTargetName.c_str())});
         process.start();
         process.waitForFinished();
         output = process.readAllStandardOutput().toStdString();
         error = process.readAllStandardError().toStdString();
     }
 
-    void buildPlugin(const std::filesystem::path &projectDir, std::string &output, std::string &error) const {
-        auto dir = getBuildDirectory(projectDir);
-        QProcess process;
-        process.setWorkingDirectory(dir.string().c_str());
-        process.setProgram(cmakeCommand.c_str());
-        process.setArguments({"--build",
-                              "--target " + QString(pluginTargetName.c_str())});
-        process.start();
-        process.waitForFinished();
-        output = process.readAllStandardOutput().toStdString();
-        error = process.readAllStandardError().toStdString();
+    void buildPlugin(const std::filesystem::path &projectDir,
+                std::string &output,
+                std::string &error) const {
+        {
+            auto dir = getBuildDirectory(projectDir);
+            QProcess process;
+            process.setWorkingDirectory(dir.string().c_str());
+            process.setProgram(cmakeCommand.c_str());
+            process.setArguments({"--build",
+                                  ".",
+                                  "--target",
+                                  QString(pluginTargetName.c_str())});
+            process.start();
+            process.waitForFinished();
+            output = process.readAllStandardOutput().toStdString();
+            error = process.readAllStandardError().toStdString();
+        }
     }
 
-    std::filesystem::path getPluginLibraryFilePath(const std::filesystem::path &projectDir) const {
+    std::filesystem::path getBuiltPluginLibraryFilePath(const std::filesystem::path &projectDir) const {
         return getBuildDirectory(projectDir)
                 .append(Library::getPlatformFilePrefix() + pluginTargetName + Library::getPlatformFileExtension());
     }
@@ -140,21 +130,10 @@ struct BuildSettings : public Messageable {
         buildDir = message.value("buildDir", std::string());
         gameTargetName = message.value("gameTargetName", std::string());
         pluginTargetName = message.value("pluginTargetName", std::string());
-        for (auto &v: message.value("srcDirs").asList()) {
-            srcDirs.insert(v.asString());
-        }
-        for (auto &v: message.value("incDirs").asList()) {
-            incDirs.insert(v.asString());
-        }
-        for (auto &v: message.value("lnkDirs").asList()) {
-            lnkDirs.insert(v.asString());
-        }
-        for (auto &v: message.value("pluginDirs").asList()) {
-            pluginDirs.insert(v.asString());
-        }
-        for (auto &v: message.value("linkedLibraries").asList()) {
-            linkedLibraries.insert(v.asString());
-        }
+        srcDirs = message.value("srcDirs", std::string());
+        incDirs = message.value("incDirs", std::string());
+        lnkDirs = message.value("lnkDirs", std::string());
+        linkedLibraries = message.value("linkedLibraries", std::string());
         return *this;
     }
 
@@ -168,40 +147,15 @@ struct BuildSettings : public Messageable {
 
         message["cmakeCommand"] = cmakeCommand;
 
-        message["buildDir"] = buildDir.string();
+        message["buildDir"] = buildDir;
 
         message["gameTargetName"] = gameTargetName;
         message["pluginTargetName"] = pluginTargetName;
 
-        auto vec = std::vector<Message>();
-        for (auto &v: srcDirs) {
-            vec.emplace_back(v.string());
-        }
-        message["srcDirs"] = vec;
-
-        vec.clear();
-        for (auto &v: incDirs) {
-            vec.emplace_back(v.string());
-        }
-        message["incDirs"] = vec;
-
-        vec.clear();
-        for (auto &v: lnkDirs) {
-            vec.emplace_back(v.string());
-        }
-        message["lnkDirs"] = vec;
-
-        vec.clear();
-        for (auto &v: pluginDirs) {
-            vec.emplace_back(v.string());
-        }
-        message["pluginDirs"] = vec;
-
-        vec.clear();
-        for (auto &v: linkedLibraries) {
-            vec.emplace_back(v);
-        }
-        message["linkedLibraries"] = vec;
+        message["srcDirs"] = srcDirs;
+        message["incDirs"] = incDirs;
+        message["lnkDirs"] = lnkDirs;
+        message["linkedLibraries"] = linkedLibraries;
 
         return message;
     }

@@ -68,6 +68,10 @@ public:
         ren.setScene(scene);
     }
 
+    void shutdown() {
+        ren.shutdownThread();
+    }
+
 protected:
     bool event(QEvent *event) override {
         if (event->type() == QEvent::None) {

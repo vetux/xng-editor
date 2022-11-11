@@ -96,7 +96,9 @@ public:
         }
         scene = std::move(value);
 
-        scene->addListener(*this);
+        if (scene){
+            scene->addListener(*this);
+        }
     }
 
     const Entity &getSelectedEntity() const {

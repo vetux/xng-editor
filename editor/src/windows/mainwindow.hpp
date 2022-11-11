@@ -34,7 +34,7 @@
 #include "widgets/entityeditwidget.hpp"
 #include "widgets/filebrowserwidget.hpp"
 
-#include "windows/projectbuilddialog.hpp"
+#include "windows/builddialog.hpp"
 
 #include "project/project.hpp"
 
@@ -43,6 +43,7 @@ Q_OBJECT
 public:
     struct Actions {
         QMenu *fileMenu;
+        QAction *buildProjectAction;
         QAction *settingsAction;
         QAction *projectCreateAction;
         QAction *projectOpenAction;
@@ -56,10 +57,6 @@ public:
         QAction *sceneOpenAction;
         QAction *sceneSaveAsAction;
         QAction *sceneSaveAction;
-
-        QMenu *buildMenu;
-        QAction *buildProjectAction;
-        QAction *buildSettingsAction;
 
         explicit Actions(QWidget *parent = nullptr);
     };
@@ -105,8 +102,6 @@ protected slots:
 
     void buildProject();
 
-    void openBuildSettings();
-
     void shutdown();
 
     void closeEvent(QCloseEvent *event) override;
@@ -116,6 +111,12 @@ protected slots:
     void deletePath(const std::filesystem::path &path);
 
     void createPath(const std::filesystem::path &parentPath);
+
+    void loadPlugin(const std::filesystem::path &pluginFile);
+
+    void unloadPlugin();
+
+    void projectChanged(const Project &project);
 
 private:
     void onEntityCreate(const EntityHandle &entity) override;
@@ -185,6 +186,10 @@ private:
     std::map<std::string, QAction *> recentProjectActionsReverse;
 
     ResourceImporter importer;
+
+    std::unique_ptr<Library> pluginLibrary;
+
+    BuildDialog *buildDialog;
 };
 
 #endif //XEDITOR_MAINWINDOW_HPP

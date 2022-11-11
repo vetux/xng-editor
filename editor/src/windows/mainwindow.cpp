@@ -32,12 +32,15 @@
 
 #include "widgets/entityeditwidget.hpp"
 
+#include "windows/builddialog.hpp"
+
 #include "io/paths.hpp"
 
 using namespace xng;
 
 MainWindow::Actions::Actions(QWidget *parent) {
     fileMenu = new QMenu("File", parent);
+    buildProjectAction = new QAction("Build Project...", parent);
     settingsAction = new QAction("Settings...", parent);
     projectCreateAction = new QAction("New Project...", parent);
     projectOpenAction = new QAction("Open Project...", parent);
@@ -46,9 +49,12 @@ MainWindow::Actions::Actions(QWidget *parent) {
     projectSettingsAction = new QAction("Project Settings...", parent);
     exitAction = new QAction("Exit", parent);
 
+    buildProjectAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_B));
+
     fileMenu->addAction(projectCreateAction);
     fileMenu->addAction(projectOpenAction);
     fileMenu->addMenu(projectOpenRecentMenu);
+    fileMenu->addAction(buildProjectAction);
     fileMenu->addAction(projectSaveAction);
     fileMenu->addAction(projectSettingsAction);
     fileMenu->addSeparator();
@@ -67,19 +73,15 @@ MainWindow::Actions::Actions(QWidget *parent) {
     sceneMenu->addAction(sceneSaveAsAction);
     sceneMenu->addAction(sceneSaveAction);
 
-    buildMenu = new QMenu("Build", parent);
-    buildProjectAction = new QAction("Build Project...", parent);
-    buildSettingsAction = new QAction("Open Build Settings...", parent);
-
-    buildMenu->addAction(buildProjectAction);
-    buildMenu->addAction(buildSettingsAction);
-
     projectSaveAction->setShortcut(QKeySequence::Save);
     sceneSaveAction->setShortcut(QKeySequence::Save);
 }
 
 MainWindow::MainWindow() : QMainWindow(),
                            actions(this) {
+    buildDialog = new BuildDialog(this);
+    buildDialog->setProject(project);
+
     scene = std::make_shared<EntityScene>();
 
     scene->addListener(*this);
@@ -122,6 +124,8 @@ MainWindow::MainWindow() : QMainWindow(),
     loadRecentProjects();
 
     sceneEditWidget->setScene(scene);
+
+    actions.buildProjectAction->setEnabled(false);
 
     connect(sceneEditWidget,
             SIGNAL(createEntity()),
@@ -199,10 +203,6 @@ MainWindow::MainWindow() : QMainWindow(),
             SIGNAL(triggered(bool)),
             this,
             SLOT(buildProject()));
-    connect(actions.buildSettingsAction,
-            SIGNAL(triggered(bool)),
-            this,
-            SLOT(openBuildSettings()));
 
     connect(fileBrowserWidget,
             SIGNAL(openPath(const std::filesystem::path &)),
@@ -217,8 +217,16 @@ MainWindow::MainWindow() : QMainWindow(),
             this,
             SLOT(createPath(const std::filesystem::path &)));
 
+    connect(buildDialog,
+            SIGNAL(projectChanged(const Project &)),
+            this,
+            SLOT(projectChanged(const Project &)));
+    connect(buildDialog,
+            SIGNAL(pluginChanged(const std::filesystem::path &)),
+            this,
+            SLOT(loadPlugin(const std::filesystem::path &)));
+
     menuBar()->addMenu(actions.fileMenu);
-    menuBar()->addMenu(actions.buildMenu);
     menuBar()->addMenu(actions.sceneMenu);
 
     updateActions();
@@ -232,7 +240,14 @@ MainWindow::MainWindow() : QMainWindow(),
     statusBar()->show();
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() {
+    // Wait for scene render widget shutdown and unset scene because there might be components in the current scene which's destructors are defined in the loaded plugin library and will be called after the library is unloaded.
+    sceneRenderWidget->shutdown();
+    scene = std::make_shared<EntityScene>();
+    sceneRenderWidget->setScene(*scene);
+    sceneEditWidget->setScene(scene);
+    unloadPlugin();
+}
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     auto &r = ResourceRegistry::getDefaultRegistry();
@@ -499,11 +514,7 @@ void MainWindow::saveSceneAs() {
 }
 
 void MainWindow::buildProject() {
-
-}
-
-void MainWindow::openBuildSettings() {
-
+    buildDialog->show();
 }
 
 void MainWindow::shutdown() {
@@ -561,17 +572,17 @@ void MainWindow::loadScene(const std::filesystem::path &path) {
 #ifndef XEDITOR_DEBUGGING
     try {
 #endif
-        statusBar()->showMessage("Opening scene at " + QString(path.string().c_str()));
-        QApplication::processEvents();
-        auto prot = JsonProtocol();
-        std::ifstream fs(path.string());
-        scene->clear();
-        *scene << prot.deserialize(fs);
-        scenePath = path;
-        sceneSaved = true;
-        updateActions();
-        sceneRenderWidget->setScene(*scene);
-        statusBar()->showMessage("Opened \"" + QString(scene->getName().c_str()) + "\"");
+    statusBar()->showMessage("Opening scene at " + QString(path.string().c_str()));
+    QApplication::processEvents();
+    auto prot = JsonProtocol();
+    std::ifstream fs(path.string());
+    scene->clear();
+    *scene << prot.deserialize(fs);
+    scenePath = path;
+    sceneSaved = true;
+    updateActions();
+    sceneRenderWidget->setScene(*scene);
+    statusBar()->showMessage("Opened \"" + QString(scene->getName().c_str()) + "\"");
 #ifndef XEDITOR_DEBUGGING
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
@@ -586,12 +597,19 @@ void MainWindow::loadProject(const std::filesystem::path &path) {
     try {
         project.load(path.parent_path());
         setWindowTitle(QString(project.getSettings().name.c_str()) + " - " + QString(path.string().c_str()));
+        buildDialog->setProject(project);
         QMessageBox::information(this, "Project opened",
                                  ("Successfully opened " + project.getSettings().name).c_str());
         projectSaved = true;
         updateActions();
         addRecentProject(path.string());
         fileBrowserWidget->setCurrentPath(path.parent_path());
+        auto pluginFile = Project::getPluginLibraryFilePath(project.getDirectory());
+        if (std::filesystem::exists(pluginFile)) {
+            loadPlugin(pluginFile);
+        }
+        actions.buildProjectAction->setEnabled(true);
+
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Project load failed",
@@ -731,6 +749,42 @@ void MainWindow::deletePath(const std::filesystem::path &path) {
 
 void MainWindow::createPath(const std::filesystem::path &parentPath) {
     // Create resource / scene dialog
+}
+
+void MainWindow::loadPlugin(const std::filesystem::path &pluginFile) {
+    if (QMessageBox::question(this,
+                              "Load Plugin",
+                              "Do you want to load the plugin library at " + QString(pluginFile.string().c_str()) + "?")
+        == QMessageBox::Yes) {
+        pluginLibrary = Library::load(pluginFile.string());
+        void (*loadFunc)() = pluginLibrary->getSymbol<void()>("load");
+        if (loadFunc){
+            loadFunc();
+        } else {
+            QMessageBox::warning(this,
+                                 "Function not found",
+                                 "load() function was not found in the plugin library.");
+        }
+    }
+}
+
+void MainWindow::unloadPlugin() {
+    if (!pluginLibrary)
+        return;
+    void (*unloadFunc)() = pluginLibrary->getSymbol<void()>("unload");
+    if (unloadFunc){
+        unloadFunc();
+    } else {
+        QMessageBox::warning(this,
+                             "Function not found",
+                             "unload() function was not found in the plugin library.");
+    }
+}
+
+void MainWindow::projectChanged(const Project &value) {
+    project = value;
+    buildDialog->setProject(project);
+    saveProject();
 }
 
 void MainWindow::onEntityCreate(const EntityHandle &entity) {

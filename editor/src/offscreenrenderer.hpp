@@ -78,8 +78,10 @@ namespace xng {
         }
 
         ~OffscreenRenderer() {
-            shutdown = true;
-            thread.join();
+            if (!shutdown){
+                shutdown = true;
+                thread.join();
+            }
             if (exception) {
                 std::rethrow_exception(exception);
             }
@@ -120,6 +122,16 @@ namespace xng {
         void setListener(const Listener &v) {
             std::lock_guard<std::mutex> guard(mutex);
             callback = v;
+        }
+
+        void shutdownThread() {
+            shutdown = true;
+            thread.join();
+            ecs = ECS();
+            scene = {};
+            if (exception) {
+                std::rethrow_exception(exception);
+            }
         }
 
     private:

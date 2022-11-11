@@ -25,6 +25,8 @@
 
 #include <filesystem>
 
+#include "xng/io/library.hpp"
+
 namespace Paths {
     static inline std::filesystem::path dataDirPath() {
         auto ret = std::filesystem::path(
@@ -58,6 +60,14 @@ namespace Paths {
 
     static inline QString projectSettingsFilename() {
         return "project-settings.json";
+    }
+
+    static inline QString pluginDirectory() {
+        return "plugin/";
+    }
+
+    static inline QString pluginLibraryFileName() {
+        return xng::Library::getPlatformFilePrefix() + QString("plugin") + xng::Library::getPlatformFileExtension();
     }
 }
 #endif //XNG_EDITOR_PATHS_HPP

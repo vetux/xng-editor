@@ -30,19 +30,19 @@ Q_OBJECT
 public:
     explicit CanvasComponentWidget(QWidget *parent = nullptr)
             : ComponentWidget(parent) {
-        cameraPositionWidget = new Vector2Widget;
+        cameraPositionWidget = new Vector2Widget();
 
-        viewportSizeWidget = new Vector2Widget;
-        viewportOffsetWidget = new Vector2Widget;
+        viewportSizeWidget = new Vector2Widget();
+        viewportOffsetWidget = new Vector2Widget();
 
-        projectionSizeWidget = new Vector2Widget;
+        projectionSizeWidget = new Vector2Widget();
 
-        overrideViewportWidget = new QCheckBox;
-        fitViewportWidget = new QCheckBox;
+        overrideViewportWidget = new QCheckBox();
+        fitViewportWidget = new QCheckBox();
 
-        clearWidget = new QCheckBox;
-        clearColorWidget = new ColorWidget;
-        layerWidget = new QSpinBox;
+        clearWidget = new QCheckBox();
+        clearColorWidget = new ColorWidget();
+        layerWidget = new QSpinBox();
 
         overrideViewportWidget->setText("Override Viewport");
         fitViewportWidget->setText("Fit Viewport");
