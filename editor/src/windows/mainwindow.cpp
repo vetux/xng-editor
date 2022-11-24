@@ -622,7 +622,7 @@ bool MainWindow::checkUnsavedSceneChanges() {
     if (!sceneSaved) {
         if (QMessageBox::question(this,
                                   "Unsaved Scene Changes",
-                                  "Your scene contains unsaved changes that are going to be overwritten, do you want to save them now?")
+                                  "Your scene contains unsaved changes that are going to be discarded, do you want to save them now?")
             == QMessageBox::Yes) {
             return saveScene();
         }
@@ -799,14 +799,16 @@ void MainWindow::onEntityDestroy(const EntityHandle &entity) {
     sceneRenderWidget->setScene(*scene);
 }
 
-void
-MainWindow::onEntityNameChanged(const EntityHandle &entity, const std::string &newName, const std::string &oldName) {
+void MainWindow::onEntityNameChanged(const EntityHandle &entity,
+                                     const std::string &newName,
+                                     const std::string &oldName) {
     sceneSaved = false;
     updateActions();
     sceneRenderWidget->setScene(*scene);
 }
 
-void MainWindow::onComponentCreate(const EntityHandle &entity, const Component &component) {
+void MainWindow::onComponentCreate(const EntityHandle &entity,
+                                   const Component &component) {
     sceneSaved = false;
     updateActions();
     sceneRenderWidget->setScene(*scene);
@@ -818,7 +820,8 @@ void MainWindow::onComponentDestroy(const EntityHandle &entity, const Component 
     sceneRenderWidget->setScene(*scene);
 }
 
-void MainWindow::onComponentUpdate(const EntityHandle &entity, const Component &oldComponent,
+void MainWindow::onComponentUpdate(const EntityHandle &entity,
+                                   const Component &oldComponent,
                                    const Component &newComponent) {
     sceneSaved = false;
     updateActions();

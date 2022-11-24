@@ -66,19 +66,20 @@ public:
     ~MainWindow() override;
 
 protected slots:
+
     void createEntity();
 
     void createEntity(const std::string &name);
 
     void destroyEntity(const Entity &entity);
 
-    void setEntityName(const Entity & entity, const std::string &name);
+    void setEntityName(const Entity &entity, const std::string &name);
 
-    void createComponent(const Entity & entity, std::type_index componentType);
+    void createComponent(const Entity &entity, std::type_index componentType);
 
-    void updateComponent(const Entity & entity, const Component &value);
+    void updateComponent(const Entity &entity, const Component &value);
 
-    void destroyComponent(const Entity & entity, std::type_index type);
+    void destroyComponent(const Entity &entity, std::type_index type);
 
     void openSettings();
 
@@ -123,8 +124,9 @@ private:
 
     void onEntityDestroy(const EntityHandle &entity) override;
 
-    void
-    onEntityNameChanged(const EntityHandle &entity, const std::string &newName, const std::string &oldName) override;
+    void onEntityNameChanged(const EntityHandle &entity,
+                             const std::string &newName,
+                             const std::string &oldName) override;
 
     void onComponentCreate(const EntityHandle &entity, const Component &component) override;
 
