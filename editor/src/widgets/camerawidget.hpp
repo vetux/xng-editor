@@ -28,6 +28,8 @@
 
 #include "xng/xng.hpp"
 
+using namespace xng;
+
 class CameraWidget : public QWidget {
 Q_OBJECT
 public:
@@ -139,7 +141,7 @@ public:
                 SLOT(bottomChanged(double)));
     }
 
-    void setValue(const Camera &c) {
+    void setValue(const xng::Camera &c) {
         camera = c;
         fovWidget->setVisible(camera.type == xng::PERSPECTIVE);
         aspectRatioWidget->setVisible(camera.type == xng::PERSPECTIVE);

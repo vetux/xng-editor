@@ -20,7 +20,7 @@
 #ifndef XEDITOR_BUILDPLATFORM_HPP
 #define XEDITOR_BUILDPLATFORM_HPP
 
-enum BuildPlatform {
+enum BuildPlatform : int {
     WIN32_86,
     WIN32_64,
     LINUX_86,

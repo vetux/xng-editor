@@ -36,17 +36,9 @@ struct ProjectSettings : public Messageable {
     std::vector<BuildSettings> buildSettings; // The user created build settings.
 
     Messageable &operator<<(const Message &message) override {
-        name = message.value("name", std::string());
-        for (auto &v: message.value("assetBundles").asList()) {
-            AssetBundle bundle;
-            bundle << v;
-            assetBundles.emplace_back(bundle);
-        }
-        for (auto &v: message.value("buildSettings").asList()) {
-            BuildSettings settings;
-            settings << v;
-            buildSettings.emplace_back(settings);
-        }
+        message.value("name", name, std::string());
+        message.value("assetBundles", assetBundles);
+        message.value("buildSettings", buildSettings);
         return *this;
     }
 

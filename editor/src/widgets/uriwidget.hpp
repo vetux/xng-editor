@@ -25,6 +25,8 @@
 
 #include "xng/xng.hpp"
 
+using namespace xng;
+
 class UriWidget : public QWidget {
 Q_OBJECT
 public:

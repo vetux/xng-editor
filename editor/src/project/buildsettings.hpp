@@ -28,7 +28,7 @@
 #include "project/buildoptimization.hpp"
 #include "project/buildplatform.hpp"
 
-#include "xng/io/messageable.hpp"
+#include "xng/io/message.hpp"
 #include "xng/io/library.hpp"
 
 #include "io/paths.hpp"
@@ -123,17 +123,17 @@ struct BuildSettings : public Messageable {
     }
 
     Messageable &operator<<(const Message &message) override {
-        name = message.value("name", std::string());
-        targetPlatform = (BuildPlatform) message.value("targetPlatform", (int) LINUX_64);
-        optimization = (BuildOptimization) message.value("optimization", (int) NO_OPTIMIZATION);
-        cmakeCommand = message.value("cmakeCommand", std::string());
-        buildDir = message.value("buildDir", std::string());
-        gameTargetName = message.value("gameTargetName", std::string());
-        pluginTargetName = message.value("pluginTargetName", std::string());
-        srcDirs = message.value("srcDirs", std::string());
-        incDirs = message.value("incDirs", std::string());
-        lnkDirs = message.value("lnkDirs", std::string());
-        linkedLibraries = message.value("linkedLibraries", std::string());
+        message.value("name", name, std::string());
+        message.value("targetPlatform", (int&)targetPlatform, (int)LINUX_64);
+        message.value("optimization", (int&)optimization, (int)NO_OPTIMIZATION);
+        message.value("cmakeCommand", cmakeCommand, std::string());
+        message.value("buildDir", buildDir, std::string());
+        message.value("gameTargetName", gameTargetName, std::string());
+        message.value("pluginTargetName", pluginTargetName, std::string());
+        message.value("srcDirs", srcDirs, std::string());
+        message.value("incDirs", incDirs, std::string());
+        message.value("lnkDirs", lnkDirs, std::string());
+        message.value("linkedLibraries", linkedLibraries, std::string());
         return *this;
     }
 

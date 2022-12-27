@@ -31,6 +31,8 @@
 #include "widgets/colorwidget.hpp"
 #include "widgets/uriwidget.hpp"
 
+using namespace xng;
+
 class TextComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
@@ -217,7 +219,7 @@ private slots:
     }
 
     void fontChanged(const QString &uri) {
-        component.font = ResourceHandle<RawAsset>(Uri(uri.toStdString().c_str()));
+        component.font = ResourceHandle<RawResource>(Uri(uri.toStdString().c_str()));
         emit valueChanged(component);
     }
 

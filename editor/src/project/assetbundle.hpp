@@ -39,14 +39,14 @@ struct AssetBundle : public Messageable {
     std::string directory; // The name of the directory which is bundled into name.pak relative to the project directory
 
     Messageable &operator<<(const Message &message) override {
-        name = message.value("name", std::string());
-        scheme = message.value("scheme", std::string());
+        message.value("name", name, std::string());
+        message.value("scheme", scheme, std::string());
 
-        compress = message.value("compress", true);
-        encrypt = message.value("encrypt", false);
-        key = message.value("key", std::string());
+        message.value("compress", compress, true);
+        message.value("encrypt", encrypt, false);
+        message.value("key", key, std::string());
 
-        directory = message.value("directory", std::string());
+        message.value("directory", directory, std::string());
 
         return *this;
     }
