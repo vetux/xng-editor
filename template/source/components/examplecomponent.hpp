@@ -19,10 +19,16 @@
 #ifndef XNG_TOOLS_SAMPLECOMPONENT_HPP
 #define XNG_TOOLS_SAMPLECOMPONENT_HPP
 
-#include "ecs/component.hpp"
+#include "xng/xng.hpp"
 
 class ExampleComponent : public xng::Component {
 public:
+    X_VARIABLE()
+    int exampleVariable;
+
+    X_VARIABLE()
+    float exampleFloat;
+
     std::type_index getType() const override {
         return typeid(ExampleComponent);
     }

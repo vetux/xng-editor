@@ -38,7 +38,7 @@
 
 #include "project/project.hpp"
 
-class MainWindow : public QMainWindow, EntityScene::Listener {
+class EditorWindow : public QMainWindow, EntityScene::Listener {
 Q_OBJECT
 public:
     struct Actions {
@@ -61,9 +61,9 @@ public:
         explicit Actions(QWidget *parent = nullptr);
     };
 
-    MainWindow();
+    EditorWindow();
 
-    ~MainWindow() override;
+    ~EditorWindow() override;
 
 protected slots:
 
@@ -78,6 +78,8 @@ protected slots:
     void createComponent(const Entity &entity, std::type_index componentType);
 
     void updateComponent(const Entity &entity, const Component &value);
+
+    void updateComponent(const Entity &entity, const GenericComponent &value);
 
     void destroyComponent(const Entity &entity, std::type_index type);
 
@@ -158,6 +160,8 @@ private:
     void saveRecentProjects();
 
     void updateActions();
+
+    void scanComponentHeaders();
 
     QWidget *rootWidget;
     QHBoxLayout *rootLayout;

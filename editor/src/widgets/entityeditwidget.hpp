@@ -30,6 +30,8 @@
 
 #include "widgets/components/componentwidget.hpp"
 
+#include "widgets/metadatacomponentwidget.hpp"
+
 class EntityEditWidget : public QWidget {
 Q_OBJECT
 public:
@@ -87,19 +89,26 @@ public:
         connect(addComponentButton, SIGNAL(clicked()), this, SIGNAL(addComponent()));
         connect(entityNameEdit, SIGNAL(textEdited(const QString &)), this, SIGNAL(updateEntityName(const QString &)));
 
-        setEntity({});
+        setEntity({}, {});
     }
 
-    void setEntity(xng::Entity value) {
+    void setEntity(xng::Entity value, const std::map<std::string, ComponentMetadata> &availableMetadata) {
         if (value) {
             setEnabled(true);
 
             entity = value;
+
             for (auto &pair: components) {
                 layout()->removeWidget(pair.second);
                 pair.second->deleteLater();
             }
             components.clear();
+
+            for (auto &pair: metadataComponents) {
+                layout()->removeWidget(pair.second);
+                pair.second->deleteLater();
+            }
+            metadataComponents.clear();
 
             componentParent->layout()->removeWidget(spacerWidget);
             componentParent->layout()->removeWidget(addComponentContainer);
@@ -109,7 +118,7 @@ public:
             else
                 entityNameEdit->setText("Unnamed Entity");
 
-            createComponentWidgets();
+            createComponentWidgets(availableMetadata);
 
             componentParent->layout()->addWidget(addComponentContainer);
 
@@ -119,11 +128,19 @@ public:
             componentScroll->update();
         } else {
             entity = {};
+
             for (auto &pair: components) {
                 layout()->removeWidget(pair.second);
                 pair.second->deleteLater();
             }
             components.clear();
+
+            for (auto &pair: metadataComponents) {
+                layout()->removeWidget(pair.second);
+                pair.second->deleteLater();
+            }
+            metadataComponents.clear();
+
             entityNameEdit->clear();
             setEnabled(false);
         }
@@ -141,6 +158,10 @@ signals:
 
     void destroyComponent(std::type_index componentType);
 
+    void updateComponent(const std::string &typeName, const Message &value);
+
+    void destroyComponent(const std::string &typeName);
+
     void updateEntityName(const QString &name);
 
     void destroyEntity();
@@ -154,6 +175,11 @@ private slots:
     void destroyPressed() {
         auto *sen = dynamic_cast<ComponentWidget *>(sender());
         emit destroyComponent(sen->getComponentType());
+    }
+
+    void destroyMetadataPressed() {
+        auto *sen = dynamic_cast<MetadataComponentWidget *>(sender());
+        emit destroyComponent(sen->getComponentTypeName());
     }
 
     void valueChanged(const AudioListenerComponent &value) {
@@ -212,18 +238,23 @@ private slots:
         emit updateComponent(value);
     }
 
+    void valueChanged(const std::string &typeName, const Message &value) {
+       emit updateComponent(typeName, value);
+    }
+
 private:
     void addComponentWidget(ComponentWidget *widget) {
         componentParent->layout()->addWidget(widget);
     }
 
-    void createComponentWidgets();
+    void createComponentWidgets(const std::map<std::string, ComponentMetadata> &availableMetadata);
 
     xng::Entity entity;
 
     QLineEdit *entityNameEdit;
 
     std::map<std::type_index, ComponentWidget *> components;
+    std::map<std::string, MetadataComponentWidget *> metadataComponents;
 
     QWidget *addComponentContainer;
     QPushButton *addComponentButton;

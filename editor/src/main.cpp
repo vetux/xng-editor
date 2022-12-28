@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 #ifndef XEDITOR_DEBUGGING
     try {
 #endif
-        MainWindow win;
+        EditorWindow win;
         win.show();
         return app.exec();
 #ifndef XEDITOR_DEBUGGING

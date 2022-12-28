@@ -34,7 +34,7 @@
 #include "widgets/components/textcomponentwidget.hpp"
 #include "widgets/components/transformcomponentwidget.hpp"
 
-void EntityEditWidget::createComponentWidgets() {
+void EntityEditWidget::createComponentWidgets(const std::map<std::string, ComponentMetadata> &availableMetadata) {
     if (entity.checkComponent<TransformComponent>()) {
         auto *widget = new TransformComponentWidget(this);
         widget->set(entity.getComponent<TransformComponent>());
@@ -204,7 +204,6 @@ void EntityEditWidget::createComponentWidgets() {
         components[typeid(SpriteComponent)] = widget;
     }
 
-
     if (entity.checkComponent<TextComponent>()) {
         auto *widget = new TextComponentWidget(this);
         widget->set(entity.getComponent<TextComponent>());
@@ -216,5 +215,25 @@ void EntityEditWidget::createComponentWidgets() {
                 SLOT(valueChanged(const TextComponent &)));
         addComponentWidget(widget);
         components[typeid(TextComponent)] = widget;
+    }
+
+    if (entity.checkComponent<GenericComponent>()) {
+        auto &comp = entity.getComponent<GenericComponent>();
+        for (auto &entry: comp.components) {
+            if (availableMetadata.find(entry.first) != availableMetadata.end()) {
+                auto &metadata = availableMetadata.at(entry.first);
+                auto *widget = new MetadataComponentWidget(this, metadata, entry.second);
+                connect(widget,
+                        SIGNAL(destroyPressed()),
+                        this,
+                        SLOT(destroyMetadataPressed()));
+                connect(widget,
+                        SIGNAL(valueChanged(const std::string &, const Message &)),
+                        this,
+                        SLOT(valueChanged(const std::string &, const Message &)));
+                addComponentWidget(widget);
+                metadataComponents[metadata.typeName] = widget;
+            }
+        }
     }
 }

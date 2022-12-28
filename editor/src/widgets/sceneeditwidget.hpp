@@ -30,7 +30,7 @@
 
 #include <utility>
 
-#include "entityeditwidget.hpp"
+#include "widgets/entityeditwidget.hpp"
 
 #include "xng/ecs/entityscene.hpp"
 #include "xng/ecs/components/transformcomponent.hpp"
@@ -67,6 +67,14 @@ public:
                 this,
                 SLOT(destroy(std::type_index)));
         connect(entityEditWidget,
+                SIGNAL(updateComponent(const std::string &, const Message &)),
+                this,
+                SLOT(update(const std::string &, const Message &)));
+        connect(entityEditWidget,
+                SIGNAL(destroyComponent(const std::string &)),
+                this,
+                SLOT(destroy(const std::string &)));
+        connect(entityEditWidget,
                 SIGNAL(destroyEntity()),
                 this,
                 SLOT(destroyEntity()));
@@ -96,9 +104,13 @@ public:
         }
         scene = std::move(value);
 
-        if (scene){
+        if (scene) {
             scene->addListener(*this);
         }
+    }
+
+    void setAvailableComponentMetadata(const std::map<std::string, ComponentMetadata> &metadata) {
+        availableMetadata = metadata;
     }
 
     const Entity &getSelectedEntity() const {
@@ -127,13 +139,15 @@ signals:
 
     void updateComponent(const Entity &entity, const Component &value);
 
+    void updateComponent(const Entity &entity, const GenericComponent &value);
+
     void destroyComponent(const Entity &entity, std::type_index type);
 
 private slots:
 
     void selectEntity(Entity entity) {
         selectedEntity = entity;
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
     void destroyEntity() {
@@ -178,6 +192,21 @@ private slots:
         menu->addMenu(menuPhysics);
         menu->addMenu(menuSound);
 
+        std::map<std::string, QMenu *> userMenus;
+
+        // TODO: Create separate menus for subdirectories
+        for (auto &metadata: availableMetadata) {
+            if (userMenus.find(metadata.second.category) == userMenus.end()){
+                userMenus[metadata.second.category] = new QMenu(metadata.second.category.c_str(), this);;
+            }
+            auto m = userMenus.at(metadata.second.category);
+            m->addAction(new GenericComponentAddAction(metadata.second.typeName, this));
+        }
+
+        for (auto &pair : userMenus){
+            menu->addMenu(pair.second);
+        }
+
         menu->popup(cursorPos);
 
         connect(menu,
@@ -196,6 +225,20 @@ private slots:
         emit destroyComponent(sen->getEntity(), type);
     }
 
+    void update(const std::string &typeName, const Message &value) {
+        auto *sen = dynamic_cast<EntityEditWidget *>(sender());
+        auto comp = sen->getEntity().getComponent<GenericComponent>();
+        comp.components.at(typeName) = value;
+        emit updateComponent(sen->getEntity(), comp);
+    }
+
+    void destroy(const std::string &typeName) {
+        auto *sen = dynamic_cast<EntityEditWidget *>(sender());
+        auto comp = sen->getEntity().getComponent<GenericComponent>();
+        comp.components.erase(typeName);
+        emit updateComponent(sen->getEntity(), comp);
+    }
+
     void currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous) {
         if (current == nullptr) {
             selectedEntity = {};
@@ -203,7 +246,7 @@ private slots:
             auto &ent = entityItemsReverse.at(current);
             selectedEntity = xng::Entity(ent, *scene);
         }
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
     void contextMenuRequested(const QPoint &pos) {
@@ -243,7 +286,7 @@ public:
                 if (selectedEntity) {
                     sceneTree->selectionModel()->clear();
                     selectedEntity = {};
-                    entityEditWidget->setEntity(selectedEntity);
+                    entityEditWidget->setEntity(selectedEntity, availableMetadata);
                 }
                 return true;
             }
@@ -270,13 +313,13 @@ public:
         }
         entityItems[entity] = item;
         entityItemsReverse[item] = entity;
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
     void onEntityDestroy(const EntityHandle &entity) override {
         if (selectedEntity && entity == selectedEntity.getHandle()) {
             selectedEntity = {};
-            entityEditWidget->setEntity(selectedEntity);
+            entityEditWidget->setEntity(selectedEntity, availableMetadata);
         }
         auto *item = entityItems.at(entity);
         auto *parent = entityItems.at(entity)->parent();
@@ -287,7 +330,7 @@ public:
         }
         entityItems.erase(entity);
         entityItemsReverse.erase(item);
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
     void onEntityNameChanged(const EntityHandle &entity,
@@ -310,7 +353,7 @@ public:
 
         // Update text
         entityItems.at(entity)->setText(0, newName.c_str());
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
     void onComponentCreate(const EntityHandle &entity, const Component &component) override {
@@ -337,7 +380,7 @@ public:
 
             sceneTree->setCurrentItem(currentItem);
         }
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
     void onComponentDestroy(const EntityHandle &entity, const Component &component) override {
@@ -353,7 +396,7 @@ public:
             sceneTree->addTopLevelItem(item);
             sceneTree->setCurrentItem(currentItem);
         }
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
     void onComponentUpdate(const EntityHandle &entity,
@@ -396,10 +439,23 @@ public:
 
             sceneTree->setCurrentItem(currentItem);
         }
-        entityEditWidget->setEntity(selectedEntity);
+        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
 private:
+    std::vector<std::string> splitString(const std::string &str, const std::string &delimiter) {
+        std::vector<std::string> ret;
+        size_t begin = 0;
+        for (auto it = str.find(delimiter); it != std::string::npos; it = str.find(delimiter, it += delimiter.size())) {
+            std::string value;
+            for (auto i = begin; i < it; i++) {
+                value += str.at(i);
+            }
+            ret.emplace_back(value);
+        }
+        return ret;
+    }
+
     class ComponentAddAction : public QAction {
     public:
         ComponentAddAction(const QString &text, std::type_index type, QWidget *parent)
@@ -414,6 +470,20 @@ private:
         std::type_index type;
     };
 
+    class GenericComponentAddAction : public QAction {
+    public:
+        GenericComponentAddAction(std::string type, QWidget *parent)
+                : QAction(type.c_str(), parent),
+                  type(std::move(type)) {}
+
+        std::string getType() const {
+            return type;
+        }
+
+    private:
+        std::string type;
+    };
+
     std::shared_ptr<xng::EntityScene> scene = nullptr;
 
     QSplitter *splitter;
@@ -424,6 +494,8 @@ private:
     std::map<QTreeWidgetItem *, xng::EntityHandle> entityItemsReverse;
 
     Entity selectedEntity;
+
+    std::map<std::string, ComponentMetadata> availableMetadata;
 };
 
 #endif //XEDITOR_ENTITYSCENEWIDGET_HPP
