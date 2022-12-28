@@ -29,7 +29,7 @@
 #include <QCoreApplication>
 #include <utility>
 
-#include "offscreenrenderer.hpp"
+#include "render/offscreenrenderer.hpp"
 
 class SceneRenderWidget : public QWidget {
 Q_OBJECT
