@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef XEDITOR_MAINWINDOW_HPP
-#define XEDITOR_MAINWINDOW_HPP
+#ifndef XEDITOR_EDITORWINDOW_HPP
+#define XEDITOR_EDITORWINDOW_HPP
 
 #include <QMainWindow>
 #include <QHBoxLayout>
@@ -194,4 +194,4 @@ private:
     BuildDialog *buildDialog;
 };
 
-#endif //XEDITOR_MAINWINDOW_HPP
+#endif //XEDITOR_EDITORWINDOW_HPP

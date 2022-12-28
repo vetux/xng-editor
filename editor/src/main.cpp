@@ -19,7 +19,7 @@
 
 #include <QApplication>
 
-#include "windows/mainwindow.hpp"
+#include "windows/editorwindow.hpp"
 
 int main(int argc, char *argv[]) {
     QApplication::setApplicationName("xeditor");
