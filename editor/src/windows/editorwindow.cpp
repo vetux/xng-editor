@@ -612,7 +612,7 @@ void EditorWindow::loadScene(const std::filesystem::path &path) {
     scenePath = path;
     setSceneSaved(true);
     sceneRenderWidget->setScene(*scene);
-    statusBar()->showMessage("Opened \"" + QString(scene->getName().c_str()) + "\"");
+    statusBar()->showMessage("Opened scene at " + QString(path.string().c_str()));
 #ifndef XEDITOR_DEBUGGING
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
