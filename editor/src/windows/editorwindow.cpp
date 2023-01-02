@@ -294,8 +294,6 @@ void EditorWindow::createEntity() {
         }
     }
     ent.createComponent<>(comp);
-    sceneSaved = false;
-    updateActions();
 }
 
 void EditorWindow::createEntity(const std::string &name) {
@@ -311,8 +309,7 @@ void EditorWindow::createEntity(const std::string &name) {
         }
     }
     ent.createComponent<>(comp);
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
 }
 
 static std::vector<EntityHandle>
@@ -351,8 +348,7 @@ void EditorWindow::destroyEntity(const Entity &entity) {
     } else {
         scene->destroy(entity.getHandle());
     }
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
 }
 
 void EditorWindow::setEntityName(const Entity &entity, const std::string &name) {
@@ -360,8 +356,7 @@ void EditorWindow::setEntityName(const Entity &entity, const std::string &name) 
         QMessageBox::warning(this, "Cannot Set Entity Name", ("Entity with name " + name + " already exists").c_str());
     } else {
         scene->setEntityName(entity.getHandle(), name);
-        sceneSaved = false;
-        updateActions();
+        setSceneSaved(false);
     }
 }
 
@@ -371,8 +366,6 @@ void EditorWindow::createComponent(const Entity &entity, std::type_index compone
                              (std::string(componentType.name()) + " already exists on " + entity.toString()).c_str());
     } else {
         scene->createComponent(entity.getHandle(), componentType);
-        sceneSaved = false;
-        updateActions();
     }
 }
 
@@ -390,14 +383,10 @@ void EditorWindow::createComponent(Entity entity, const std::string &typeName) {
 
 void EditorWindow::updateComponent(const Entity &entity, const Component &value) {
     scene->updateComponent(entity.getHandle(), value);
-    sceneSaved = false;
-    updateActions();
 }
 
 void EditorWindow::updateComponent(const Entity &entity, const GenericComponent &value) {
     scene->updateComponent(entity.getHandle(), value);
-    sceneSaved = false;
-    updateActions();
 }
 
 void EditorWindow::destroyComponent(const Entity &entity, std::type_index type) {
@@ -405,8 +394,6 @@ void EditorWindow::destroyComponent(const Entity &entity, std::type_index type) 
                               ("Do you want to destroy " + ComponentRegistry::instance().getNameFromType(type)).c_str())
         == QMessageBox::Yes) {
         scene->destroyComponent(entity.getHandle(), type);
-        sceneSaved = false;
-        updateActions();
     }
 }
 
@@ -453,11 +440,6 @@ void EditorWindow::newProject() {
 }
 
 void EditorWindow::openProject() {
-    if (!checkUnsavedSceneChanges()) {
-        QMessageBox::information(this, "Aborted", "The operation was cancelled, no project opened.");
-        return;
-    }
-
     QFileDialog dialog;
     dialog.setWindowTitle("Select project to open...");
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
@@ -471,19 +453,15 @@ void EditorWindow::openProject() {
 }
 
 void EditorWindow::openRecentProject() {
-    if (!checkUnsavedSceneChanges()) {
-        QMessageBox::information(this, "Aborted", "The operation was cancelled, no project opened.");
-        return;
-    }
     auto *ptr = sender();
     loadProject(recentProjectActions.at(dynamic_cast<QAction *>(ptr)));
 }
 
 void EditorWindow::saveProject() {
-    saveScene();
+    if (!scenePath.empty())
+        saveScene();
     project.save();
-    projectSaved = true;
-    updateActions();
+    setProjectSaved(true);
 }
 
 void EditorWindow::openProjectSettings() {
@@ -492,22 +470,21 @@ void EditorWindow::openProjectSettings() {
 
 void EditorWindow::newScene() {
     if (!checkUnsavedSceneChanges()) {
-        QMessageBox::information(this, "Aborted", "The operation was cancelled, no scene created.");
+        QMessageBox::information(this, "Aborted", "The operation was cancelled.");
         return;
     }
 
     scenePath = "";
     scene->clear();
 
-    sceneSaved = true;
-    updateActions();
+    setSceneSaved(true);
 
     sceneRenderWidget->setScene(*scene);
 }
 
 void EditorWindow::openScene() {
     if (!checkUnsavedSceneChanges()) {
-        QMessageBox::information(this, "Aborted", "The operation was cancelled, no scene opened.");
+        QMessageBox::information(this, "Aborted", "The operation was cancelled.");
         return;
     }
 
@@ -525,33 +502,30 @@ void EditorWindow::openScene() {
 }
 
 bool EditorWindow::saveScene() {
-    if (!sceneSaved) {
-        if (scenePath.empty()) {
-            QFileDialog dialog;
-            dialog.setWindowTitle("Select scene output file...");
-            dialog.setAcceptMode(QFileDialog::AcceptSave);
-            dialog.setFileMode(QFileDialog::AnyFile);
-            dialog.setDirectory(project.getProjectDirectory().string().c_str());
-            dialog.setMimeTypeFilters({"application/json"});
+    if (scenePath.empty()) {
+        QFileDialog dialog;
+        dialog.setWindowTitle("Select scene output file...");
+        dialog.setAcceptMode(QFileDialog::AcceptSave);
+        dialog.setFileMode(QFileDialog::AnyFile);
+        dialog.setDirectory(project.getProjectDirectory().string().c_str());
+        dialog.setMimeTypeFilters({"application/json"});
 
-            if (dialog.exec() == QFileDialog::Accepted) {
-                auto &file = dialog.selectedFiles().at(0);
-                scenePath = std::filesystem::path(file.toStdString());
-            } else {
-                return false;
-            }
+        if (dialog.exec() == QFileDialog::Accepted) {
+            auto &file = dialog.selectedFiles().at(0);
+            scenePath = std::filesystem::path(file.toStdString());
+        } else {
+            return false;
         }
-        if (!scenePath.has_extension()) {
-            scenePath = scenePath.parent_path().append(scenePath.filename().string() + JsonParser::EXTENSION_SCENE);
-        }
-        Message msg;
-        *scene >> msg;
-        auto p = JsonProtocol();
-        std::ofstream fs(scenePath.string());
-        p.serialize(fs, msg);
-        sceneSaved = true;
-        updateActions();
     }
+    if (!scenePath.has_extension()) {
+        scenePath = scenePath.parent_path().append(scenePath.filename().string() + JsonParser::EXTENSION_SCENE);
+    }
+    Message msg;
+    *scene >> msg;
+    auto p = JsonProtocol();
+    std::ofstream fs(scenePath.string());
+    p.serialize(fs, msg);
+    setSceneSaved(true);
     return true;
 }
 
@@ -565,7 +539,6 @@ void EditorWindow::saveSceneAs() {
 
     if (dialog.exec() == QFileDialog::Accepted) {
         auto &file = dialog.selectedFiles().at(0);
-        sceneSaved = false;
         scenePath = std::filesystem::path(file.toStdString());
         saveScene();
     }
@@ -637,8 +610,7 @@ void EditorWindow::loadScene(const std::filesystem::path &path) {
     scene->clear();
     *scene << prot.deserialize(fs);
     scenePath = path;
-    sceneSaved = true;
-    updateActions();
+    setSceneSaved(true);
     sceneRenderWidget->setScene(*scene);
     statusBar()->showMessage("Opened \"" + QString(scene->getName().c_str()) + "\"");
 #ifndef XEDITOR_DEBUGGING
@@ -651,13 +623,17 @@ void EditorWindow::loadScene(const std::filesystem::path &path) {
 }
 
 void EditorWindow::loadProject(const std::filesystem::path &path) {
+    if (!checkUnsavedSceneChanges()) {
+        QMessageBox::information(this, "Aborted", "The operation was cancelled.");
+        return;
+    }
     scene->clear();
+    setSceneSaved(true);
     try {
         project.load(path.parent_path());
         setWindowTitle(QString(project.getSettings().name.c_str()) + " - " + QString(path.string().c_str()));
         buildDialog->setProject(project);
-        projectSaved = true;
-        updateActions();
+        setProjectSaved(true);
         addRecentProject(path.string());
         fileBrowserWidget->setCurrentPath(path.parent_path());
         auto pluginFile = project.getPluginLibraryFilePath();
@@ -758,6 +734,36 @@ void EditorWindow::saveRecentProjects() {
         QMessageBox::warning(this,
                              "Failed to save recent projects",
                              QString(e.what()));
+    }
+}
+
+void EditorWindow::setProjectSaved(bool saved) {
+    projectSaved = saved;
+    updateActions();
+    updateTitle();
+}
+
+void EditorWindow::setSceneSaved(bool saved) {
+    sceneSaved = saved;
+    updateActions();
+    updateTitle();
+}
+
+void EditorWindow::updateTitle() {
+    if (project.isLoaded()) {
+        if (projectSaved && sceneSaved)
+            setWindowTitle(QString(project.getSettings().name.c_str())
+                           + " - "
+                           + QString(project.getProjectDirectory().string().c_str()));
+        else
+            setWindowTitle(QString(project.getSettings().name.c_str())
+                           + "* - "
+                           + QString(project.getProjectDirectory().string().c_str()));
+    } else {
+        if (projectSaved && sceneSaved)
+            setWindowTitle(QApplication::applicationDisplayName());
+        else
+            setWindowTitle(QApplication::applicationDisplayName() + "*");
     }
 }
 
@@ -898,8 +904,8 @@ void EditorWindow::unloadPlugin() {
 }
 
 void EditorWindow::buildDialogChanged(const Project &value) {
+    setProjectSaved(false);
     project = value;
-    buildDialog->setProject(project);
 }
 
 void EditorWindow::applicationStateChanged(Qt::ApplicationState state) {
@@ -917,42 +923,36 @@ void EditorWindow::applicationStateChanged(Qt::ApplicationState state) {
 }
 
 void EditorWindow::onEntityCreate(const EntityHandle &entity) {
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
     sceneRenderWidget->setScene(*scene);
 }
 
 void EditorWindow::onEntityDestroy(const EntityHandle &entity) {
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
     sceneRenderWidget->setScene(*scene);
 }
 
 void EditorWindow::onEntityNameChanged(const EntityHandle &entity,
                                        const std::string &newName,
                                        const std::string &oldName) {
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
     sceneRenderWidget->setScene(*scene);
 }
 
 void EditorWindow::onComponentCreate(const EntityHandle &entity,
                                      const Component &component) {
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
     sceneRenderWidget->setScene(*scene);
 }
 
 void EditorWindow::onComponentDestroy(const EntityHandle &entity, const Component &component) {
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
     sceneRenderWidget->setScene(*scene);
 }
 
 void EditorWindow::onComponentUpdate(const EntityHandle &entity,
                                      const Component &oldComponent,
                                      const Component &newComponent) {
-    sceneSaved = false;
-    updateActions();
+    setSceneSaved(false);
     sceneRenderWidget->setScene(*scene);
 }

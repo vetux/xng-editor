@@ -169,6 +169,12 @@ private:
 
     void saveRecentProjects();
 
+    void setProjectSaved(bool saved);
+
+    void setSceneSaved(bool saved);
+
+    void updateTitle();
+
     void updateActions();
 
     void scanComponentHeaders();
