@@ -196,6 +196,8 @@ private:
     std::unique_ptr<Library> pluginLibrary;
 
     BuildDialog *buildDialog;
+
+    std::map<std::string, ComponentMetadata> availableMetadata;
 };
 
 #endif //XEDITOR_EDITORWINDOW_HPP

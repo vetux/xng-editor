@@ -394,8 +394,7 @@ void EditorWindow::newProject() {
                                                              +
                                                              " has existing contents, please select a writeable empty directory."));
         } else {
-            Project::create(std::filesystem::path(dir.toStdString()),
-                            std::filesystem::path(Paths::projectTemplatePath().string()));
+            Project::createNewProject(std::filesystem::path(dir.toStdString()));
             path.append(Paths::projectSettingsFilename().toStdString().c_str());
             loadProject(path);
             break;
@@ -465,7 +464,7 @@ void EditorWindow::openScene() {
     dialog.setWindowTitle("Select scene file to open...");
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setFileMode(QFileDialog::AnyFile);
-    dialog.setDirectory(project.getDirectory().c_str());
+    dialog.setDirectory(project.getProjectDirectory().string().c_str());
     dialog.setMimeTypeFilters({"application/json"});
 
     if (dialog.exec() == QFileDialog::Accepted) {
@@ -479,9 +478,9 @@ bool EditorWindow::saveScene() {
         if (scenePath.empty()) {
             QFileDialog dialog;
             dialog.setWindowTitle("Select scene output file...");
-            dialog.setAcceptMode(QFileDialog::AcceptOpen);
+            dialog.setAcceptMode(QFileDialog::AcceptSave);
             dialog.setFileMode(QFileDialog::AnyFile);
-            dialog.setDirectory(project.getDirectory().c_str());
+            dialog.setDirectory(project.getProjectDirectory().string().c_str());
             dialog.setMimeTypeFilters({"application/json"});
 
             if (dialog.exec() == QFileDialog::Accepted) {
@@ -505,9 +504,9 @@ bool EditorWindow::saveScene() {
 void EditorWindow::saveSceneAs() {
     QFileDialog dialog;
     dialog.setWindowTitle("Select scene output file...");
-    dialog.setAcceptMode(QFileDialog::AcceptOpen);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setFileMode(QFileDialog::AnyFile);
-    dialog.setDirectory(project.getDirectory().c_str());
+    dialog.setDirectory(project.getProjectDirectory().string().c_str());
     dialog.setMimeTypeFilters({"application/json"});
 
     if (dialog.exec() == QFileDialog::Accepted) {
@@ -609,7 +608,7 @@ void EditorWindow::loadProject(const std::filesystem::path &path) {
         updateActions();
         addRecentProject(path.string());
         fileBrowserWidget->setCurrentPath(path.parent_path());
-        auto pluginFile = Project::getPluginLibraryFilePath(project.getDirectory());
+        auto pluginFile = project.getPluginLibraryFilePath();
         if (std::filesystem::exists(pluginFile)) {
             loadPlugin(pluginFile);
         }
@@ -715,7 +714,7 @@ void EditorWindow::updateActions() {
 }
 
 void EditorWindow::scanComponentHeaders() {
-    //TODO: Implement component header parsing
+    if (project.isLoaded()) {}
 }
 
 void EditorWindow::closeEvent(QCloseEvent *event) {
@@ -761,13 +760,14 @@ void EditorWindow::createPath(const std::filesystem::path &parentPath) {
 }
 
 void EditorWindow::loadPlugin(const std::filesystem::path &pluginFile) {
+    unloadPlugin();
     if (QMessageBox::question(this,
                               "Load Plugin",
                               "Do you want to load the plugin library at " + QString(pluginFile.string().c_str()) + "?")
         == QMessageBox::Yes) {
         pluginLibrary = Library::load(pluginFile.string());
         void (*loadFunc)() = pluginLibrary->getSymbol<void()>("load");
-        if (loadFunc){
+        if (loadFunc) {
             loadFunc();
         } else {
             QMessageBox::warning(this,
@@ -781,7 +781,7 @@ void EditorWindow::unloadPlugin() {
     if (!pluginLibrary)
         return;
     void (*unloadFunc)() = pluginLibrary->getSymbol<void()>("unload");
-    if (unloadFunc){
+    if (unloadFunc) {
         unloadFunc();
     } else {
         QMessageBox::warning(this,

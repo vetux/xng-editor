@@ -34,34 +34,23 @@ struct ProjectSettings : public Messageable {
     std::string name; // The name of the project
     std::vector<AssetBundle> assetBundles{}; // The asset bundles
     std::vector<BuildSettings> buildSettings; // The user created build settings.
+    std::set<std::string> componentDirectories; // The list of directories that are scanned with the header tool
 
     Messageable &operator<<(const Message &message) override {
         message.value("name", name, std::string());
         message.value("assetBundles", assetBundles);
         message.value("buildSettings", buildSettings);
+        message.value("componentDirectories", componentDirectories);
         return *this;
     }
 
     Message &operator>>(Message &message) const override {
         message = Message(xng::Message::DICTIONARY);
 
-        message["name"] = name;
-
-        auto vec = std::vector<Message>();
-        for (auto &v: assetBundles) {
-            Message msg;
-            v >> msg;
-            vec.emplace_back(msg);
-        }
-        message["assetBundles"] = vec;
-
-        vec.clear();
-        for (auto &v: buildSettings) {
-            Message msg;
-            v >> msg;
-            vec.emplace_back(msg);
-        }
-        message["buildSettings"] = vec;
+        name >> message["name"];
+        assetBundles >> message["assetBundles"];
+        buildSettings >> message["buildSettings"];
+        componentDirectories >> message["componentDirectories"];
 
         return message;
     }

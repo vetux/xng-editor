@@ -54,10 +54,6 @@ namespace Paths {
         return dataDirPath().string() + "/state.json";
     }
 
-    static inline std::filesystem::path projectTemplatePath() {
-        return (QCoreApplication::applicationDirPath() + "/template").toStdString();
-    }
-
     static inline QString projectSettingsFilename() {
         return "project-settings.json";
     }

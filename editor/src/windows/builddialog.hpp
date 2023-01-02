@@ -133,7 +133,7 @@ private slots:
             QMessageBox::warning(this, "No configuration selected", "No build configuration selected");
             return;
         }
-        getCurrentSettings().initialize(project.getDirectory(), output, error);
+        getCurrentSettings().initialize(project.getProjectDirectory(), output, error);
         if (!error.empty()) {
             QMessageBox::warning(this, "Failed to initialize build", error.c_str());
         } else {
@@ -148,13 +148,13 @@ private slots:
             QMessageBox::warning(this, "No configuration selected", "No build configuration selected");
             return;
         }
-        getCurrentSettings().buildPlugin(project.getDirectory(), output, error);
+        getCurrentSettings().buildPlugin(project.getProjectDirectory(), output, error);
         if (!error.empty()) {
             QMessageBox::warning(this, "Failed to build plugin", error.c_str());
         } else {
             QMessageBox::information(this, "Build successful", "Successfully built the plugin");
-            copyPluginFile(getCurrentSettings(), project.getDirectory());
-            emit pluginChanged(Project::getPluginLibraryFilePath(project.getDirectory()));
+            copyPluginFile(getCurrentSettings(), project.getProjectDirectory());
+            emit pluginChanged(project.getPluginLibraryFilePath());
         }
     }
 
@@ -165,7 +165,7 @@ private slots:
             QMessageBox::warning(this, "No configuration selected", "No build configuration selected");
             return;
         }
-        getCurrentSettings().buildTarget(project.getDirectory(), output, error);
+        getCurrentSettings().buildTarget(project.getProjectDirectory(), output, error);
         if (!error.empty()) {
             QMessageBox::warning(this, "Failed to build game", error.c_str());
         } else {
@@ -190,15 +190,21 @@ private slots:
     }
 
     void settingsDeleteClicked() {
-        auto &vec = project.getSettings().buildSettings;
-        vec.erase(vec.begin() + currentSettingsIndex);
-        emit projectChanged(project);
+        auto buildSettings = project.getSettings().buildSettings.at(currentSettingsIndex);
+        if (QMessageBox::question(this,
+                                  "Delete Build Configuration",
+                                  ("Do you want to delete " + buildSettings.name + " ?").c_str())
+            == QMessageBox::Yes) {
+            auto &vec = project.getSettings().buildSettings;
+            vec.erase(vec.begin() + currentSettingsIndex);
+            emit projectChanged(project);
+        }
     }
 
 private:
     void copyPluginFile(const BuildSettings &settings, const std::filesystem::path &projectDir) {
-        std::filesystem::path pluginDir = Project::getPluginDirectory(projectDir);
-        auto pluginFileTarget = Project::getPluginLibraryFilePath(projectDir);
+        std::filesystem::path pluginDir = project.getPluginDirectory();
+        auto pluginFileTarget = project.getPluginLibraryFilePath();
         auto pluginFile = settings.getBuiltPluginLibraryFilePath(projectDir);
         std::filesystem::remove(pluginFileTarget);
         std::filesystem::copy_file(pluginFile, pluginFileTarget);

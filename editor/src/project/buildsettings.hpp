@@ -36,21 +36,42 @@
 using namespace xng;
 
 struct BuildSettings : public Messageable {
-    std::string name{};
+    std::string name{}; // The name of this build configuration
 
     std::string cmakeCommand{}; // The command to use when invoking cmake
+    std::string buildDir{}; // The output directory relative to the project directory
 
+    // CMake Configuration variables that are passed as command line arguments when invoking cmake
     BuildPlatform targetPlatform{};
     BuildOptimization optimization{};
 
-    std::string buildDir{}; // The output directory relative to the project directory
-
     std::string gameTargetName{}; // The name of the game cmake target
     std::string pluginTargetName{}; // The name of the plugin cmake target
-    std::string srcDirs{}; // The source directories separated by spaces
-    std::string incDirs{}; // The include directories separated by spaces
-    std::string lnkDirs{}; // The link directories separated by spaces
-    std::string linkedLibraries{}; // The linked library names separated by spaces
+
+    std::set<std::string> sourceDirectories{}; // The list of source directories
+    std::set<std::string> includeDirectories{}; // The list of include directories
+    std::set<std::string> linkDirectories{}; // The list of link directories
+    std::set<std::string> linkedLibraries{}; // The list of linked library names
+
+    static std::string concatCmakeList(const std::set<std::string> &dirs) {
+        std::string ret;
+        for (auto &dir: dirs)
+            ret += dir + " ";
+        if (!ret.empty())
+            ret.pop_back();
+        return ret;
+    }
+
+    static std::set<std::string> splitCmakeList(const std::string &dirs) {
+        std::set<std::string> ret;
+        size_t it = 0;
+        size_t last = 0;
+        for (it = dirs.find(' '); it != std::string::npos; last = it, it = dirs.find(' ', it + 1)) {
+            std::string dir = dirs.substr(last + 1, it - last - 1);
+        }
+        ret.insert(dirs.substr(last + 1));
+        return ret;
+    }
 
     std::filesystem::path getBuildDirectory(const std::filesystem::path &projectDir) const {
         return std::filesystem::path(projectDir).append(buildDir.c_str());
@@ -70,13 +91,13 @@ struct BuildSettings : public Messageable {
         QProcess process;
         process.setWorkingDirectory(dir.string().c_str());
         process.setProgram(cmakeCommand.c_str());
-        process.setArguments({"..",
+        process.setArguments({projectDir.string().c_str(),
                               "-DEXE_NAME=" + QString(gameTargetName.c_str()),
                               "-DPLUGIN_NAME=" + QString(pluginTargetName.c_str()),
-                              "-DSRC_DIR=" + QString(srcDirs.c_str()),
-                              "-DINC_DIR=" + QString(incDirs.c_str()),
-                              "-DLNK_DIR=" + QString(lnkDirs.c_str()),
-                              "-DLINK=" + QString(linkedLibraries.c_str())});
+                              "-DSRC_DIR=" + QString(concatCmakeList(sourceDirectories).c_str()),
+                              "-DINC_DIR=" + QString(concatCmakeList(includeDirectories).c_str()),
+                              "-DLNK_DIR=" + QString(concatCmakeList(linkDirectories).c_str()),
+                              "-DLINK=" + QString(concatCmakeList(linkedLibraries).c_str())});
         process.start();
         process.waitForFinished();
         output = process.readAllStandardOutput().toStdString();
@@ -99,8 +120,8 @@ struct BuildSettings : public Messageable {
     }
 
     void buildPlugin(const std::filesystem::path &projectDir,
-                std::string &output,
-                std::string &error) const {
+                     std::string &output,
+                     std::string &error) const {
         {
             auto dir = getBuildDirectory(projectDir);
             QProcess process;
@@ -124,38 +145,38 @@ struct BuildSettings : public Messageable {
 
     Messageable &operator<<(const Message &message) override {
         message.value("name", name, std::string());
-        message.value("targetPlatform", (int&)targetPlatform, (int)LINUX_64);
-        message.value("optimization", (int&)optimization, (int)NO_OPTIMIZATION);
+        message.value("targetPlatform", (int &) targetPlatform, (int) LINUX_64);
+        message.value("optimization", (int &) optimization, (int) NO_OPTIMIZATION);
         message.value("cmakeCommand", cmakeCommand, std::string());
         message.value("buildDir", buildDir, std::string());
         message.value("gameTargetName", gameTargetName, std::string());
         message.value("pluginTargetName", pluginTargetName, std::string());
-        message.value("srcDirs", srcDirs, std::string());
-        message.value("incDirs", incDirs, std::string());
-        message.value("lnkDirs", lnkDirs, std::string());
-        message.value("linkedLibraries", linkedLibraries, std::string());
+        message.value("sourceDirectories", sourceDirectories, {});
+        message.value("includeDirectories", includeDirectories, {});
+        message.value("linkDirectories", linkDirectories, {});
+        message.value("linkedLibraries", linkedLibraries, {});
         return *this;
     }
 
     Message &operator>>(Message &message) const override {
         message = Message(xng::Message::DICTIONARY);
 
-        message["name"] = name;
+        name >> message["name"];
 
-        message["targetPlatform"] = (int) targetPlatform;
-        message["optimization"] = (int) optimization;
+        targetPlatform >> message["targetPlatform"];
+        optimization >> message["optimization"];
 
-        message["cmakeCommand"] = cmakeCommand;
+        cmakeCommand >> message["cmakeCommand"];
 
-        message["buildDir"] = buildDir;
+        buildDir >> message["buildDir"];
 
-        message["gameTargetName"] = gameTargetName;
-        message["pluginTargetName"] = pluginTargetName;
+        gameTargetName >> message["gameTargetName"];
+        pluginTargetName >> message["pluginTargetName"];
 
-        message["srcDirs"] = srcDirs;
-        message["incDirs"] = incDirs;
-        message["lnkDirs"] = lnkDirs;
-        message["linkedLibraries"] = linkedLibraries;
+        sourceDirectories >> message["sourceDirectories"];
+        includeDirectories >> message["includeDirectories"];
+        linkDirectories >> message["linkDirectories"];
+        linkedLibraries >> message["linkedLibraries"];
 
         return message;
     }

@@ -142,14 +142,18 @@ public:
             gameTargetName->setText(settings.gameTargetName.c_str());
         if (pluginTargetName->text().toStdString() != settings.pluginTargetName)
             pluginTargetName->setText(settings.pluginTargetName.c_str());
-        if (srcDirs->text().toStdString() != settings.srcDirs)
-            srcDirs->setText(settings.srcDirs.c_str());
-        if (incDirs->text().toStdString() != settings.incDirs)
-            incDirs->setText(settings.incDirs.c_str());
-        if (lnkDirs->text().toStdString() != settings.lnkDirs)
-            lnkDirs->setText(settings.lnkDirs.c_str());
-        if (linkedLibraries->text().toStdString() != settings.linkedLibraries)
-            linkedLibraries->setText(settings.linkedLibraries.c_str());
+        auto str = BuildSettings::concatCmakeList(settings.sourceDirectories);
+        if (srcDirs->text().toStdString() != str)
+            srcDirs->setText(str.c_str());
+        str = BuildSettings::concatCmakeList(settings.includeDirectories);
+        if (incDirs->text().toStdString() != str)
+            incDirs->setText(str.c_str());
+        str = BuildSettings::concatCmakeList(settings.linkDirectories);
+        if (lnkDirs->text().toStdString() != str)
+            lnkDirs->setText(str.c_str());
+        str = BuildSettings::concatCmakeList(settings.linkedLibraries);
+        if (linkedLibraries->text().toStdString() != str)
+            linkedLibraries->setText(str.c_str());
 
         blockComboBox = false;
     }
@@ -163,10 +167,10 @@ public:
         ret.buildDir = buildDir->text().toStdString().c_str();
         ret.gameTargetName = gameTargetName->text().toStdString().c_str();
         ret.pluginTargetName = pluginTargetName->text().toStdString().c_str();
-        ret.srcDirs = srcDirs->text().toStdString().c_str();
-        ret.incDirs = incDirs->text().toStdString().c_str();
-        ret.lnkDirs = lnkDirs->text().toStdString().c_str();
-        ret.linkedLibraries = linkedLibraries->text().toStdString().c_str();
+        ret.sourceDirectories = BuildSettings::splitCmakeList(srcDirs->text().toStdString());
+        ret.includeDirectories = BuildSettings::splitCmakeList(incDirs->text().toStdString());
+        ret.linkDirectories = BuildSettings::splitCmakeList(lnkDirs->text().toStdString());
+        ret.linkedLibraries = BuildSettings::splitCmakeList(linkedLibraries->text().toStdString());
         return ret;
     }
 

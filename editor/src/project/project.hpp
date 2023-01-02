@@ -31,21 +31,12 @@
 class Project {
 public:
     /**
-     * Copy the project template directory to the target directory.
+     * Create the files required for a new loadable project in the specified directory.
      * Output Dir must be empty and writeable.
      *
      * @param outputDir
-     * @param templateDir
      */
-    static void create(const std::filesystem::path &outputDir, const std::filesystem::path &templateDir);
-
-    static std::filesystem::path getPluginDirectory(const std::filesystem::path &projectDir) {
-        return std::filesystem::path(projectDir).append(Paths::pluginDirectory().toStdString().c_str());
-    }
-
-    static std::filesystem::path getPluginLibraryFilePath(const std::filesystem::path &projectDir) {
-        return getPluginDirectory(projectDir).append(Paths::pluginLibraryFileName().toStdString().c_str());
-    }
+    static void createNewProject(const std::filesystem::path &outputDir);
 
     Project() = default;
 
@@ -88,14 +79,28 @@ public:
 
     void setSettings(const ProjectSettings &settings);
 
-    const std::string &getDirectory() const;
+    std::filesystem::path getProjectDirectory() const;
+
+    std::filesystem::path getPluginDirectory() const;
+
+    std::filesystem::path getPluginLibraryFilePath() const;
+
+    /**
+     * @return The sourceDirectories and includeDirectories entries of all build settings appended to the project directory.
+     */
+    std::set<std::filesystem::path> getSourceDirectories() const;
+
+    /**
+     * @return The asset bundle directories of all build settings appended to the project directory..
+     */
+    std::set<std::filesystem::path> getAssetDirectories() const;
 
     bool initialized() const {
         return !directory.empty();
     }
 
 private:
-    std::string directory;
+    std::filesystem::path directory;
     ProjectSettings settings;
 };
 
