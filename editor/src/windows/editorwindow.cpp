@@ -152,13 +152,25 @@ EditorWindow::EditorWindow() : QMainWindow(),
             this,
             SLOT(createComponent(const Entity &, std::type_index)));
     connect(sceneEditWidget,
+            SIGNAL(createComponent(const Entity &, const std::string &)),
+            this,
+            SLOT(createComponent(const Entity &, const std::string &)));
+    connect(sceneEditWidget,
             SIGNAL(updateComponent(const Entity &, const Component &)),
             this,
             SLOT(updateComponent(const Entity &, const Component &)));
     connect(sceneEditWidget,
+            SIGNAL(updateComponent(const Entity &, const GenericComponent &)),
+            this,
+            SLOT(updateComponent(const Entity &, const GenericComponent &)));
+    connect(sceneEditWidget,
             SIGNAL(destroyComponent(const Entity &, std::type_index)),
             this,
             SLOT(destroyComponent(const Entity &, std::type_index)));
+    connect(sceneEditWidget,
+            SIGNAL(destroyComponent(const Entity &, const std::string&)),
+            this,
+            SLOT(destroyComponent(const Entity &, const std::string&)));
 
     connect(actions.settingsAction,
             SIGNAL(triggered(bool)),
@@ -224,7 +236,7 @@ EditorWindow::EditorWindow() : QMainWindow(),
     connect(buildDialog,
             SIGNAL(projectChanged(const Project &)),
             this,
-            SLOT(projectChanged(const Project &)));
+            SLOT(buildDialogChanged(const Project &)));
     connect(buildDialog,
             SIGNAL(pluginChanged(const std::filesystem::path &)),
             this,
@@ -243,6 +255,11 @@ EditorWindow::EditorWindow() : QMainWindow(),
     ResourceRegistry::getDefaultRegistry().setImporter(ResourceImporter(std::move(parsers)));
 
     statusBar()->show();
+
+    connect(QGuiApplication::instance(),
+            SIGNAL(applicationStateChanged(Qt::ApplicationState)),
+            this,
+            SLOT(applicationStateChanged(Qt::ApplicationState)));
 }
 
 EditorWindow::~EditorWindow() {
@@ -359,6 +376,18 @@ void EditorWindow::createComponent(const Entity &entity, std::type_index compone
     }
 }
 
+void EditorWindow::createComponent(Entity entity, const std::string &typeName) {
+    if (!entity.checkComponent<GenericComponent>()) {
+        entity.createComponent<GenericComponent>();
+    }
+
+    auto comp = entity.getComponent<GenericComponent>();
+    comp.components[typeName] = Message();
+    entity.updateComponent(comp);
+
+    sceneEditWidget->setScene(scene);
+}
+
 void EditorWindow::updateComponent(const Entity &entity, const Component &value) {
     scene->updateComponent(entity.getHandle(), value);
     sceneSaved = false;
@@ -372,9 +401,24 @@ void EditorWindow::updateComponent(const Entity &entity, const GenericComponent 
 }
 
 void EditorWindow::destroyComponent(const Entity &entity, std::type_index type) {
-    scene->destroyComponent(entity.getHandle(), type);
-    sceneSaved = false;
-    updateActions();
+    if (QMessageBox::question(this, "Destroy Component",
+                              ("Do you want to destroy " + ComponentRegistry::instance().getNameFromType(type)).c_str())
+        == QMessageBox::Yes) {
+        scene->destroyComponent(entity.getHandle(), type);
+        sceneSaved = false;
+        updateActions();
+    }
+}
+
+void EditorWindow::destroyComponent(Entity entity, const std::string &typeName) {
+    if (QMessageBox::question(this, "Destroy Component",
+                              ("Do you want to destroy " + typeName).c_str())
+        == QMessageBox::Yes) {
+        auto comp = entity.getComponent<GenericComponent>();
+        comp.components.erase(typeName);
+        entity.updateComponent(comp);
+        sceneEditWidget->setScene(scene);
+    }
 }
 
 void EditorWindow::openSettings() {
@@ -496,6 +540,9 @@ bool EditorWindow::saveScene() {
             } else {
                 return false;
             }
+        }
+        if (!scenePath.has_extension()) {
+            scenePath = scenePath.parent_path().append(scenePath.filename().string() + JsonParser::EXTENSION_SCENE);
         }
         Message msg;
         *scene >> msg;
@@ -620,7 +667,7 @@ void EditorWindow::loadProject(const std::filesystem::path &path) {
             loadPlugin(pluginFile);
         }
         actions.buildProjectAction->setEnabled(true);
-
+        scanComponentHeaders();
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Project load failed",
@@ -721,7 +768,58 @@ void EditorWindow::updateActions() {
 }
 
 void EditorWindow::scanComponentHeaders() {
-    if (project.isLoaded()) {}
+    if (project.isLoaded()) {
+        for (auto &dir: project.getSourceDirectories()) {
+            auto scanCount = 0;
+            auto compCount = 0;
+            for (auto &dirEntry: std::filesystem::recursive_directory_iterator(dir)) {
+                if (dirEntry.is_directory())
+                    continue;
+                scanCount++;
+                statusBar()->showMessage(("Scanning " + dirEntry.path().string() + " for components...").c_str());
+                xng::Tokenizer tokenizer;
+                xng::HeaderParser parser;
+                xng::HeaderGenerator generator;
+                try {
+                    std::fstream stream;
+                    stream.exceptions(std::fstream::badbit);
+                    stream.open(dirEntry.path());
+                    auto tokens = tokenizer.tokenize(stream);
+                    auto metadataList = parser.parseTokens(
+                            dirEntry.path().filename().string(),
+                            tokens);
+                    if (!metadataList.empty()) {
+                        for (auto &metadata: metadataList) {
+                            availableMetadata[metadata.typeName] = metadata;
+                            auto generatedHeader = generator.generateHeader(metadata);
+                            if (!generatedHeader.empty()) {
+                                auto generatedPath = dirEntry.path().parent_path()
+                                        .append(Paths::generatedHeaderFileName(dirEntry.path().filename()).string());
+                                std::fstream ofs;
+                                ofs.exceptions(std::fstream::badbit);
+                                ofs.open(generatedPath, std::fstream::out);
+                                ofs << generatedHeader.c_str();
+                                ofs.flush();
+                                ofs.close();
+                            }
+                            compCount++;
+                        }
+                        sceneEditWidget->setAvailableComponentMetadata(availableMetadata);
+                    }
+                } catch (const std::exception &e) {
+                    QMessageBox::warning(this, "Failed to scan file", ("Failed to scan "
+                                                                       + dirEntry.path().string()
+                                                                       + " Error:\n"
+                                                                       + e.what()).c_str());
+                }
+            }
+            statusBar()->showMessage(("Scanned "
+                                      + std::to_string(scanCount)
+                                      + " files for components, Found "
+                                      + std::to_string(compCount)
+                                      + " Components").c_str());
+        }
+    }
 }
 
 void EditorWindow::closeEvent(QCloseEvent *event) {
@@ -732,7 +830,7 @@ void EditorWindow::openPath(const std::filesystem::path &path) {
     if (path.filename().string().c_str() == Paths::projectSettingsFilename()) {
         // Open project
         loadProject(path);
-    } else if (path.extension().string() == ".xbundle") {
+    } else if (path.extension().string() == JsonParser::EXTENSION_BUNDLE) {
         // Open / Edit resource bundle
         std::ifstream fs(path);
         auto str = std::string(std::istream_iterator<char>(fs),
@@ -740,7 +838,7 @@ void EditorWindow::openPath(const std::filesystem::path &path) {
         std::vector<char> vec;
         vec.insert(vec.begin(), str.begin(), str.end());
         auto bundle = JsonParser().read(vec, path.extension(), nullptr);
-    } else if (path.extension().string() == ".xscene") {
+    } else if (path.extension().string() == JsonParser::EXTENSION_SCENE) {
         if (QMessageBox::question(this, "Open Scene",
                                   "Do you want to open the scene at: " + QString(path.string().c_str()) + " ?")
             == QMessageBox::Yes) {
@@ -797,10 +895,23 @@ void EditorWindow::unloadPlugin() {
     }
 }
 
-void EditorWindow::projectChanged(const Project &value) {
+void EditorWindow::buildDialogChanged(const Project &value) {
     project = value;
     buildDialog->setProject(project);
-    saveProject();
+}
+
+void EditorWindow::applicationStateChanged(Qt::ApplicationState state) {
+    switch (state) {
+        case Qt::ApplicationSuspended:
+            break;
+        case Qt::ApplicationHidden:
+            break;
+        case Qt::ApplicationInactive:
+            break;
+        case Qt::ApplicationActive:
+            scanComponentHeaders();
+            break;
+    }
 }
 
 void EditorWindow::onEntityCreate(const EntityHandle &entity) {

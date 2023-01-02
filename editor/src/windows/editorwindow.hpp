@@ -81,11 +81,15 @@ protected slots:
 
     void createComponent(const Entity &entity, std::type_index componentType);
 
+    void createComponent(Entity entity, const std::string &typeName);
+
     void updateComponent(const Entity &entity, const Component &value);
 
     void updateComponent(const Entity &entity, const GenericComponent &value);
 
     void destroyComponent(const Entity &entity, std::type_index type);
+
+    void destroyComponent(Entity entity, const std::string &typeName);
 
     void openSettings();
 
@@ -123,7 +127,9 @@ protected slots:
 
     void unloadPlugin();
 
-    void projectChanged(const Project &project);
+    void buildDialogChanged(const Project &value);
+
+    void applicationStateChanged(Qt::ApplicationState state);
 
 private:
     void onEntityCreate(const EntityHandle &entity) override;

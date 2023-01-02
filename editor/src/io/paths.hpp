@@ -65,5 +65,10 @@ namespace Paths {
     static inline QString pluginLibraryFileName() {
         return xng::Library::getPlatformFilePrefix() + QString("plugin") + xng::Library::getPlatformFileExtension();
     }
+
+    static inline std::filesystem::path generatedHeaderFileName(const std::filesystem::path &filename){
+        auto name = filename;
+        return name.replace_extension().string() + ".generated" + filename.extension().string();
+    }
 }
 #endif //XNG_EDITOR_PATHS_HPP

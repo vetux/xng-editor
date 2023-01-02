@@ -23,6 +23,8 @@
 
 #include <utility>
 
+#include <QSpinBox>
+
 /**
 * The list of supported types for XVARIABLE invocations
 */
@@ -126,22 +128,58 @@ class MemberWidget : public QWidget {
 Q_OBJECT
 public:
     MemberWidget(QWidget *parent,
-                 xng::ComponentMetadata::MemberMetadata metadata,
-                 Message value)
-            : QWidget(parent), metadata(std::move(metadata)), value(std::move(value)) {
-        setLayout(new QHBoxLayout);
-
+                 xng::ComponentMetadata::MemberMetadata m,
+                 Message message)
+            : QWidget(parent), metadata(std::move(m)), value(std::move(message)) {
         auto *layout = new QHBoxLayout;
 
-        layout->addWidget(new QLabel(this->metadata.displayName.empty()
-                                     ? this->metadata.instanceName.c_str()
-                                     : this->metadata.displayName.c_str()));
+        layout->addWidget(new QLabel(metadata.displayName.empty()
+                                     ? metadata.instanceName.c_str()
+                                     : metadata.displayName.c_str()));
 
         //TODO: Implement widget constructors
-        switch (typeNameMapping.at(this->metadata.type.typeName)) {
-            default:
-                layout->addWidget(new QLabel("Unsupported Type"), 1);
-                break;
+        if (typeNameMapping.find(metadata.type.typeName) != typeNameMapping.end()) {
+            switch (typeNameMapping.at(metadata.type.typeName)) {
+                default:
+                    layout->addWidget(new QLabel("Unsupported Type"), 1);
+                    break;
+                case TYPE_INT: {
+                    auto *widget = new QSpinBox(this);
+                    QObject::connect(widget,
+                                     QOverload<int>::of(&QSpinBox::valueChanged),
+                                     this,
+                                     [this](int v) {
+                                         value = Message(v);
+                                         emit valueChanged(value);
+                                     },
+                                     Qt::ConnectionType::AutoConnection);
+                    int defaultValue = 0;
+                    try {
+                        defaultValue = std::stoi(metadata.defaultValue);
+                    } catch (const std::exception &e) {}
+                    int val = defaultValue;
+                    if (message.getType() == xng::Message::INT) {
+                        val = message.asInt();
+                    }
+                    int min = std::numeric_limits<int>::min();
+                    int max = std::numeric_limits<int>::max();
+                    try {
+                        if (metadata.minimum.type == xng::Token::LITERAL_NUMERIC) {
+                            min = std::stoi(metadata.minimum.value);
+                        }
+                        if (metadata.maximum.type == xng::Token::LITERAL_NUMERIC) {
+                            max = std::stoi(metadata.maximum.value);
+                        }
+                    } catch (const std::exception &e) {}
+                    widget->setMinimum(min);
+                    widget->setMaximum(max);
+                    widget->setValue(val);
+                    layout->addWidget(widget);
+                }
+                    break;
+            }
+        } else {
+            layout->addWidget(new QLabel("Unsupported Type"), 1);
         }
 
         setLayout(layout);
@@ -168,7 +206,8 @@ public:
                             const ComponentMetadata &componentMetadata,
                             const Message &value)
             : ComponentWidget(parent), metadata(componentMetadata) {
-        createMembers(value);
+        headerText->setText(componentMetadata.typeName.c_str());
+        parseMessage(value);
     }
 
     std::type_index getComponentType() override {
@@ -184,6 +223,7 @@ public:
         for (auto &comp: memberWidgets) {
             ret.insert({comp.first, comp.second->getValue()});
         }
+        ret.insert({"enabled", headerCheckBox->isChecked()});
         return {ret};
     }
 
@@ -192,9 +232,7 @@ signals:
     void dataChanged(const std::string &typeName, const Message &value);
 
 protected:
-    void checkBoxStateChange(int state) override {
-
-    }
+    void checkBoxStateChange(int state) override {}
 
 private slots:
 
@@ -203,16 +241,22 @@ private slots:
     }
 
 private:
-    void createMembers(const Message &value) {
+    void parseMessage(const Message &value) {
         for (auto &member: metadata.members) {
-            auto *label = new QLabel(member.displayName.c_str());
-            auto *widget = new MemberWidget(this, member, value[member.instanceName.c_str()]);
-            label->setToolTip(member.description.c_str());
-            layout()->addWidget(label);
+            Message memberMsg;
+            if (value.getType() == xng::Message::DICTIONARY
+                && value.has(member.instanceName.c_str())) {
+                memberMsg = value[member.instanceName.c_str()];
+            }
+            auto *widget = new MemberWidget(this, member, memberMsg);
             layout()->addWidget(widget);
             memberWidgets[member.instanceName] = widget;
             connect(widget, SIGNAL(valueChanged(const Message &)), this, SLOT(valueChanged(const Message &)));
         }
+
+        bool val;
+        value.value("enabled", val, true);
+        headerCheckBox->setChecked(val);
     }
 
     ComponentMetadata metadata;

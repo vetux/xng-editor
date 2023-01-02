@@ -211,7 +211,9 @@ void EntityEditWidget::createComponentWidgets(const std::map<std::string, Compon
                 SIGNAL(destroyPressed()),
                 this,
                 SLOT(destroyPressed()));
-        connect(widget, SIGNAL(valueChanged(const TextComponent &)), this,
+        connect(widget,
+                SIGNAL(valueChanged(const TextComponent &)),
+                this,
                 SLOT(valueChanged(const TextComponent &)));
         addComponentWidget(widget);
         components[typeid(TextComponent)] = widget;
@@ -228,7 +230,7 @@ void EntityEditWidget::createComponentWidgets(const std::map<std::string, Compon
                         this,
                         SLOT(destroyMetadataPressed()));
                 connect(widget,
-                        SIGNAL(valueChanged(const std::string &, const Message &)),
+                        SIGNAL(dataChanged(const std::string &, const Message &)),
                         this,
                         SLOT(valueChanged(const std::string &, const Message &)));
                 addComponentWidget(widget);

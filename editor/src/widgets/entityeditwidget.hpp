@@ -160,7 +160,7 @@ signals:
 
     void updateComponent(const std::string &typeName, const Message &value);
 
-    void destroyComponent(const std::string &typeName);
+    void destroyGenericComponent(const std::string &typeName);
 
     void updateEntityName(const QString &name);
 
@@ -179,7 +179,7 @@ private slots:
 
     void destroyMetadataPressed() {
         auto *sen = dynamic_cast<MetadataComponentWidget *>(sender());
-        emit destroyComponent(sen->getComponentTypeName());
+        emit destroyGenericComponent(sen->getComponentTypeName());
     }
 
     void valueChanged(const AudioListenerComponent &value) {

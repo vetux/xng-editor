@@ -67,13 +67,13 @@ public:
                 this,
                 SLOT(destroy(std::type_index)));
         connect(entityEditWidget,
+                SIGNAL(destroyGenericComponent(const std::string &)),
+                this,
+                SLOT(destroy(const std::string &)));
+        connect(entityEditWidget,
                 SIGNAL(updateComponent(const std::string &, const Message &)),
                 this,
                 SLOT(update(const std::string &, const Message &)));
-        connect(entityEditWidget,
-                SIGNAL(destroyComponent(const std::string &)),
-                this,
-                SLOT(destroy(const std::string &)));
         connect(entityEditWidget,
                 SIGNAL(destroyEntity()),
                 this,
@@ -137,11 +137,15 @@ signals:
 
     void createComponent(const Entity &entity, std::type_index componentType);
 
+    void createComponent(const Entity &entity, const std::string &typeName);
+
     void updateComponent(const Entity &entity, const Component &value);
 
     void updateComponent(const Entity &entity, const GenericComponent &value);
 
     void destroyComponent(const Entity &entity, std::type_index type);
+
+    void destroyComponent(const Entity &entity, const std::string &typeName);
 
 private slots:
 
@@ -156,7 +160,14 @@ private slots:
 
     void triggered(QAction *action) {
         auto *act = dynamic_cast<ComponentAddAction *>(action);
-        emit createComponent(selectedEntity, act->getType());
+        if (act) {
+            emit createComponent(selectedEntity, act->getType());
+        } else {
+            auto *gAct = dynamic_cast<GenericComponentAddAction *>(action);
+            if (gAct) {
+                emit createComponent(selectedEntity, gAct->getType());
+            }
+        }
     }
 
     void addComponent() {
@@ -196,14 +207,18 @@ private slots:
 
         // TODO: Create separate menus for subdirectories
         for (auto &metadata: availableMetadata) {
-            if (userMenus.find(metadata.second.category) == userMenus.end()){
-                userMenus[metadata.second.category] = new QMenu(metadata.second.category.c_str(), this);;
+            std::string category = "User Components";
+            if (!metadata.second.category.empty()) {
+                category = metadata.second.category;
             }
-            auto m = userMenus.at(metadata.second.category);
+            if (userMenus.find(category) == userMenus.end()) {
+                userMenus[category] = new QMenu(category.c_str(), this);;
+            }
+            auto m = userMenus.at(category);
             m->addAction(new GenericComponentAddAction(metadata.second.typeName, this));
         }
 
-        for (auto &pair : userMenus){
+        for (auto &pair: userMenus) {
             menu->addMenu(pair.second);
         }
 
@@ -234,9 +249,7 @@ private slots:
 
     void destroy(const std::string &typeName) {
         auto *sen = dynamic_cast<EntityEditWidget *>(sender());
-        auto comp = sen->getEntity().getComponent<GenericComponent>();
-        comp.components.erase(typeName);
-        emit updateComponent(sen->getEntity(), comp);
+        emit destroyComponent(sen->getEntity(), typeName);
     }
 
     void currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous) {
@@ -402,7 +415,13 @@ public:
     void onComponentUpdate(const EntityHandle &entity,
                            const Component &oldComponent,
                            const Component &newComponent) override {
-        if (newComponent.getType() == typeid(TransformComponent)) {
+        if (newComponent.getType() == typeid(GenericComponent)) {
+            auto &oldComp = dynamic_cast<const GenericComponent &>(oldComponent);
+            auto &newComp = dynamic_cast<const GenericComponent &>(newComponent);
+            if (oldComp.components.size() != newComp.components.size()){
+                entityEditWidget->setEntity(selectedEntity, availableMetadata);
+            }
+        } else if (newComponent.getType() == typeid(TransformComponent)) {
             auto &oldComp = dynamic_cast<const TransformComponent &>(oldComponent);
             auto &newComp = dynamic_cast<const TransformComponent &>(newComponent);
 
@@ -439,23 +458,9 @@ public:
 
             sceneTree->setCurrentItem(currentItem);
         }
-        entityEditWidget->setEntity(selectedEntity, availableMetadata);
     }
 
 private:
-    std::vector<std::string> splitString(const std::string &str, const std::string &delimiter) {
-        std::vector<std::string> ret;
-        size_t begin = 0;
-        for (auto it = str.find(delimiter); it != std::string::npos; it = str.find(delimiter, it += delimiter.size())) {
-            std::string value;
-            for (auto i = begin; i < it; i++) {
-                value += str.at(i);
-            }
-            ret.emplace_back(value);
-        }
-        return ret;
-    }
-
     class ComponentAddAction : public QAction {
     public:
         ComponentAddAction(const QString &text, std::type_index type, QWidget *parent)

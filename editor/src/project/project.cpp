@@ -381,10 +381,10 @@ std::set<std::filesystem::path> Project::getSourceDirectories() const {
     std::set<std::filesystem::path> ret;
     for (auto &buildSettings: settings.buildSettings) {
         for (auto &path: buildSettings.sourceDirectories) {
-            ret.insert(std::filesystem::path(path));
+            ret.insert(getProjectDirectory().append(path));
         }
         for (auto &path: buildSettings.includeDirectories) {
-            ret.insert(std::filesystem::path(path));
+            ret.insert(getProjectDirectory().append(path));
         }
     }
     return ret;
