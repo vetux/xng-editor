@@ -43,20 +43,24 @@ Q_OBJECT
 public:
     struct Actions {
         QMenu *fileMenu;
-        QAction *buildProjectAction;
         QAction *settingsAction;
         QAction *projectCreateAction;
         QAction *projectOpenAction;
         QMenu *projectOpenRecentMenu;
+        QAction *projectCloseAction;
         QAction *projectSaveAction;
         QAction *projectSettingsAction;
         QAction *exitAction;
+
+        QMenu *buildMenu;
+        QAction *buildProjectAction;
 
         QMenu *sceneMenu;
         QAction *sceneNewAction;
         QAction *sceneOpenAction;
         QAction *sceneSaveAsAction;
         QAction *sceneSaveAction;
+        QAction *sceneCloseAction;
 
         explicit Actions(QWidget *parent = nullptr);
     };

@@ -38,42 +38,47 @@
 using namespace xng;
 
 EditorWindow::Actions::Actions(QWidget *parent) {
-    fileMenu = new QMenu("File", parent);
-    buildProjectAction = new QAction("Build Project...", parent);
     settingsAction = new QAction("Settings...", parent);
+    exitAction = new QAction("Exit", parent);
     projectCreateAction = new QAction("New Project...", parent);
     projectOpenAction = new QAction("Open Project...", parent);
     projectOpenRecentMenu = new QMenu("Open Recent Project...", parent);
-    projectSaveAction = new QAction("Save Project", parent);
+    projectCloseAction = new QAction("Close Project", parent);
+    projectSaveAction = new QAction("Save All", parent);
     projectSettingsAction = new QAction("Project Settings...", parent);
-    exitAction = new QAction("Exit", parent);
 
-    buildProjectAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_B));
-
+    fileMenu = new QMenu("File", parent);
     fileMenu->addAction(projectCreateAction);
     fileMenu->addAction(projectOpenAction);
     fileMenu->addMenu(projectOpenRecentMenu);
-    fileMenu->addAction(buildProjectAction);
-    fileMenu->addAction(projectSaveAction);
-    fileMenu->addAction(projectSettingsAction);
+    fileMenu->addAction(projectCloseAction);
     fileMenu->addSeparator();
     fileMenu->addAction(settingsAction);
     fileMenu->addSeparator();
+    fileMenu->addAction(projectSaveAction);
+    fileMenu->addSeparator();
     fileMenu->addAction(exitAction);
 
-    sceneMenu = new QMenu("Scene", parent);
-    sceneNewAction = new QAction("New...", parent);
-    sceneOpenAction = new QAction("Open...", parent);
-    sceneSaveAsAction = new QAction("Save As...", parent);
-    sceneSaveAction = new QAction("Save", parent);
+    buildProjectAction = new QAction("Build Project...", parent);
 
+    buildMenu = new QMenu("Build", parent);
+    buildMenu->addAction(buildProjectAction);
+
+    sceneNewAction = new QAction("New Scene...", parent);
+    sceneOpenAction = new QAction("Open Scene...", parent);
+    sceneSaveAsAction = new QAction("Save Scene As...", parent);
+    sceneSaveAction = new QAction("Save Scene", parent);
+    sceneCloseAction = new QAction("Close Scene", parent);
+
+    sceneMenu = new QMenu("Scene", parent);
     sceneMenu->addAction(sceneNewAction);
     sceneMenu->addAction(sceneOpenAction);
     sceneMenu->addAction(sceneSaveAsAction);
     sceneMenu->addAction(sceneSaveAction);
+    sceneMenu->addAction(sceneCloseAction);
 
     projectSaveAction->setShortcut(QKeySequence::Save);
-    sceneSaveAction->setShortcut(QKeySequence::Save);
+    buildProjectAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_B));
 }
 
 EditorWindow::EditorWindow() : QMainWindow(),
@@ -226,6 +231,7 @@ EditorWindow::EditorWindow() : QMainWindow(),
             SLOT(loadPlugin(const std::filesystem::path &)));
 
     menuBar()->addMenu(actions.fileMenu);
+    menuBar()->addMenu(actions.buildMenu);
     menuBar()->addMenu(actions.sceneMenu);
 
     updateActions();
@@ -430,6 +436,7 @@ void EditorWindow::openRecentProject() {
 }
 
 void EditorWindow::saveProject() {
+    saveScene();
     project.save();
     projectSaved = true;
     updateActions();
