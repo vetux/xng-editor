@@ -67,9 +67,20 @@ struct BuildSettings : public Messageable {
         size_t it = 0;
         size_t last = 0;
         for (it = dirs.find(' '); it != std::string::npos; last = it, it = dirs.find(' ', it + 1)) {
-            std::string dir = dirs.substr(last + 1, it - last - 1);
+            auto begin = last;
+            if (begin > 0)
+                begin += 1;
+            auto count = it - begin;
+            if (begin > 0)
+                count -= 1;
+            auto str = dirs.substr(begin, count);
+            ret.insert(str);
         }
-        ret.insert(dirs.substr(last + 1));
+        if (last > 0)
+            last += 1;
+        if (last < dirs.size()) {
+            ret.insert(dirs.substr(last));
+        }
         return ret;
     }
 

@@ -656,8 +656,6 @@ void EditorWindow::loadProject(const std::filesystem::path &path) {
         project.load(path.parent_path());
         setWindowTitle(QString(project.getSettings().name.c_str()) + " - " + QString(path.string().c_str()));
         buildDialog->setProject(project);
-        QMessageBox::information(this, "Project opened",
-                                 ("Successfully opened " + project.getSettings().name).c_str());
         projectSaved = true;
         updateActions();
         addRecentProject(path.string());
@@ -668,6 +666,7 @@ void EditorWindow::loadProject(const std::filesystem::path &path) {
         }
         actions.buildProjectAction->setEnabled(true);
         scanComponentHeaders();
+        statusBar()->showMessage(("Opened project at " + path.string()).c_str());
     } catch (const std::exception &e) {
         QMessageBox::warning(this,
                              "Project load failed",
@@ -772,52 +771,55 @@ void EditorWindow::scanComponentHeaders() {
         for (auto &dir: project.getSourceDirectories()) {
             auto scanCount = 0;
             auto compCount = 0;
-            for (auto &dirEntry: std::filesystem::recursive_directory_iterator(dir)) {
-                if (dirEntry.is_directory())
-                    continue;
-                scanCount++;
-                statusBar()->showMessage(("Scanning " + dirEntry.path().string() + " for components...").c_str());
-                xng::Tokenizer tokenizer;
-                xng::HeaderParser parser;
-                xng::HeaderGenerator generator;
-                try {
-                    std::fstream stream;
-                    stream.exceptions(std::fstream::badbit);
-                    stream.open(dirEntry.path());
-                    auto tokens = tokenizer.tokenize(stream);
-                    auto metadataList = parser.parseTokens(
-                            dirEntry.path().filename().string(),
-                            tokens);
-                    if (!metadataList.empty()) {
-                        for (auto &metadata: metadataList) {
-                            availableMetadata[metadata.typeName] = metadata;
-                            auto generatedHeader = generator.generateHeader(metadata);
-                            if (!generatedHeader.empty()) {
-                                auto generatedPath = dirEntry.path().parent_path()
-                                        .append(Paths::generatedHeaderFileName(dirEntry.path().filename()).string());
-                                std::fstream ofs;
-                                ofs.exceptions(std::fstream::badbit);
-                                ofs.open(generatedPath, std::fstream::out);
-                                ofs << generatedHeader.c_str();
-                                ofs.flush();
-                                ofs.close();
+            try {
+                for (auto &dirEntry: std::filesystem::recursive_directory_iterator(dir)) {
+                    if (dirEntry.is_directory())
+                        continue;
+                    scanCount++;
+                    statusBar()->showMessage(("Scanning " + dirEntry.path().string() + " for components...").c_str());
+                    xng::Tokenizer tokenizer;
+                    xng::HeaderParser parser;
+                    xng::HeaderGenerator generator;
+                    try {
+                        std::fstream stream;
+                        stream.exceptions(std::fstream::badbit);
+                        stream.open(dirEntry.path());
+                        auto tokens = tokenizer.tokenize(stream);
+                        auto metadataList = parser.parseTokens(
+                                dirEntry.path().filename().string(),
+                                tokens);
+                        if (!metadataList.empty()) {
+                            for (auto &metadata: metadataList) {
+                                availableMetadata[metadata.typeName] = metadata;
+                                auto generatedHeader = generator.generateHeader(metadata);
+                                if (!generatedHeader.empty()) {
+                                    auto generatedPath = dirEntry.path().parent_path()
+                                            .append(Paths::generatedHeaderFileName(
+                                                    dirEntry.path().filename()).string());
+                                    std::fstream ofs;
+                                    ofs.exceptions(std::fstream::badbit);
+                                    ofs.open(generatedPath, std::fstream::out);
+                                    ofs << generatedHeader.c_str();
+                                    ofs.flush();
+                                    ofs.close();
+                                }
+                                compCount++;
                             }
-                            compCount++;
+                            sceneEditWidget->setAvailableComponentMetadata(availableMetadata);
                         }
-                        sceneEditWidget->setAvailableComponentMetadata(availableMetadata);
+                    } catch (const std::exception &e) {
+                        QMessageBox::warning(this, "Failed to scan file", ("Failed to scan "
+                                                                           + dirEntry.path().string()
+                                                                           + " Error:\n"
+                                                                           + e.what()).c_str());
                     }
-                } catch (const std::exception &e) {
-                    QMessageBox::warning(this, "Failed to scan file", ("Failed to scan "
-                                                                       + dirEntry.path().string()
-                                                                       + " Error:\n"
-                                                                       + e.what()).c_str());
                 }
-            }
-            statusBar()->showMessage(("Scanned "
-                                      + std::to_string(scanCount)
-                                      + " files for components, Found "
-                                      + std::to_string(compCount)
-                                      + " Components").c_str());
+                statusBar()->showMessage(("Scanned "
+                                          + std::to_string(scanCount)
+                                          + " files for components, Found "
+                                          + std::to_string(compCount)
+                                          + " Components").c_str());
+            } catch (const std::exception &e) {}
         }
     }
 }
