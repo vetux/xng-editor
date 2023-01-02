@@ -17,6 +17,3 @@ endif ()
 
 target_include_directories(xeditor PUBLIC ${Engine.Dir.INCLUDE} ${XEditor.Dir.INCLUDE} ${XEditor.Dir.SRC})
 target_link_libraries(xeditor xengine Threads::Threads Qt5::Core Qt5::Widgets)
-
-# Copy template directory to binary dir
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/template DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
