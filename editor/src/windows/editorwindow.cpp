@@ -35,6 +35,13 @@
 
 #include "io/paths.hpp"
 
+#include "xng/driver/assimp/assimpimporter.hpp"
+#include "xng/driver/sndfile/sndfileimporter.hpp"
+
+#include "headertool/tokenizer.hpp"
+#include "headertool/headerparser.hpp"
+#include "headertool/headergenerator.hpp"
+
 using namespace xng;
 
 EditorWindow::Actions::Actions(QWidget *parent) {
@@ -247,12 +254,13 @@ EditorWindow::EditorWindow() : QMainWindow(),
     menuBar()->addMenu(actions.sceneMenu);
 
     updateActions();
-    std::vector<std::unique_ptr<ResourceParser>> parsers;
-    parsers.emplace_back(std::unique_ptr<ResourceParser>(new StbiParser));
-    parsers.emplace_back(std::unique_ptr<ResourceParser>(new JsonParser));
-    parsers.emplace_back(std::unique_ptr<ResourceParser>(ResourceParser::load(xng::ASSIMP).release()));
-    parsers.emplace_back(std::unique_ptr<ResourceParser>(ResourceParser::load(xng::LIBSNDFILE).release()));
-    ResourceRegistry::getDefaultRegistry().setImporter(ResourceImporter(std::move(parsers)));
+
+    std::vector<std::unique_ptr<ResourceImporter>> importers;
+    importers.emplace_back(std::make_unique<StbiImporter>());
+    importers.emplace_back(std::make_unique<JsonImporter>());
+    importers.emplace_back(std::make_unique<AssImpImporter>());
+    importers.emplace_back(std::make_unique<SndFileImporter>());
+    ResourceRegistry::getDefaultRegistry().setImporters(std::move(importers));
 
     statusBar()->show();
 
@@ -518,7 +526,7 @@ bool EditorWindow::saveScene() {
         }
     }
     if (!scenePath.has_extension()) {
-        scenePath = scenePath.parent_path().append(scenePath.filename().string() + JsonParser::EXTENSION_SCENE);
+        scenePath = scenePath.parent_path().append(scenePath.filename().string() + ".json");
     }
     Message msg;
     *scene >> msg;
@@ -783,9 +791,9 @@ void EditorWindow::scanComponentHeaders() {
                         continue;
                     scanCount++;
                     statusBar()->showMessage(("Scanning " + dirEntry.path().string() + " for components...").c_str());
-                    xng::Tokenizer tokenizer;
-                    xng::HeaderParser parser;
-                    xng::HeaderGenerator generator;
+                    Tokenizer tokenizer;
+                    HeaderParser parser;
+                    HeaderGenerator generator;
                     try {
                         std::fstream stream;
                         stream.exceptions(std::fstream::badbit);
@@ -838,19 +846,23 @@ void EditorWindow::openPath(const std::filesystem::path &path) {
     if (path.filename().string().c_str() == Paths::projectSettingsFilename()) {
         // Open project
         loadProject(path);
-    } else if (path.extension().string() == JsonParser::EXTENSION_BUNDLE) {
-        // Open / Edit resource bundle
+    } else if (path.extension().string() == ".json") {
+        // Open / Edit json resource bundle or scene
         std::ifstream fs(path);
         auto str = std::string(std::istream_iterator<char>(fs),
                                std::istream_iterator<char>());
         std::vector<char> vec;
         vec.insert(vec.begin(), str.begin(), str.end());
-        auto bundle = JsonParser().read(vec, path.extension(), nullptr);
-    } else if (path.extension().string() == JsonParser::EXTENSION_SCENE) {
-        if (QMessageBox::question(this, "Open Scene",
-                                  "Do you want to open the scene at: " + QString(path.string().c_str()) + " ?")
-            == QMessageBox::Yes) {
-            loadScene(path);
+        auto bundle = JsonImporter().read(fs, path.extension(), path.string(), nullptr);
+
+        if (bundle.getAll<EntityScene>().empty()){
+            // TODO: Implement Resource Bundle editing
+        } else {
+            if (QMessageBox::question(this, "Open Scene",
+                                      "Do you want to open the scene at: " + QString(path.string().c_str()) + " ?")
+                == QMessageBox::Yes) {
+                loadScene(path);
+            }
         }
     } else {
         QMessageBox::information(this, "Unrecognized file",

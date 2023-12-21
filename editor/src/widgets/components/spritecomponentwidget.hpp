@@ -99,10 +99,10 @@ public:
     void set(const SpriteComponent &value) {
         component = value;
         spriteWidget->setValue(value.sprite.getUri());
-        mixSpriteWidget->setValue(value.mixSprite.getUri());
+     /*   mixSpriteWidget->setValue(value.mixSprite.getUri());
         layerWidget->setValue(value.layer);
         flipSpriteXWidget->setChecked(value.flipSprite.x);
-        flipSpriteYWidget->setChecked(value.flipSprite.y);
+        flipSpriteYWidget->setChecked(value.flipSprite.y);*/
         mixWidget->setValue(value.mix);
         mixColorWidget->setColor(ColorRGBA(value.mixColor.r(), value.mixColor.g(), value.mixColor.b(), 0));
         headerCheckBox->setChecked(component.enabled);
@@ -138,22 +138,22 @@ private slots:
     }
 
     void spriteBChanged(const QString &uri) {
-        component.mixSprite = ResourceHandle<Sprite>(Uri(uri.toStdString().c_str()));
+     //   component.mixSprite = ResourceHandle<Sprite>(Uri(uri.toStdString().c_str()));
         emit valueChanged(component);
     }
 
     void layerChanged(int layer) {
-        component.layer = layer;
+     //   component.layer = layer;
         emit valueChanged(component);
     }
 
     void flipSpriteXChanged(int state) {
-        component.flipSprite.x = state == Qt::Checked;
+    //    component.flipSprite.x = state == Qt::Checked;
         emit valueChanged(component);
     }
 
     void flipSpriteYChanged(int state) {
-        component.flipSprite.y = state == Qt::Checked;
+   //     component.flipSprite.y = state == Qt::Checked;
         emit valueChanged(component);
     }
 
@@ -163,7 +163,7 @@ private slots:
     }
 
     void mixColorChanged(const ColorRGBA &value){
-        component.mixColor = ColorRGB(value.r(), value.g(), value.b());
+   //     component.mixColor = ColorRGB(value.r(), value.g(), value.b());
         emit valueChanged(component);
     }
 

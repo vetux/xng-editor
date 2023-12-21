@@ -25,6 +25,8 @@
 
 #include "xng/xng.hpp"
 
+// TODO: Rewrite gui component widgets
+
 class CanvasComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
@@ -118,11 +120,11 @@ public:
     void set(const CanvasComponent &value) {
         component = value;
         cameraPositionWidget->set(value.cameraPosition);
-        viewportSizeWidget->set(value.viewportSize.convert<float>());
+       /* viewportSizeWidget->set(value.viewportSize.convert<float>());
         viewportOffsetWidget->set(value.viewportOffset.convert<float>());
         projectionSizeWidget->set(value.projectionSize.convert<float>());
         overrideViewportWidget->setChecked(value.overrideViewport);
-        fitViewportWidget->setChecked(value.fitViewport);
+        fitViewportWidget->setChecked(value.fitViewport);*/
         clearWidget->setChecked(value.clear);
         clearColorWidget->setColor(value.clearColor);
         layerWidget->setValue(value.layer);
@@ -159,27 +161,27 @@ private slots:
     }
 
     void viewportSizeChanged(const Vec2f &value) {
-        component.viewportSize = Vec2i(value.x, value.y);
+    //    component.viewportSize = Vec2i(value.x, value.y);
         emit valueChanged(component);
     }
 
     void viewportOffsetChanged(const Vec2f &value) {
-        component.viewportOffset = Vec2i(value.x, value.y);
+        //component.viewportOffset = Vec2i(value.x, value.y);
         emit valueChanged(component);
     }
 
     void projectionSizeChanged(const Vec2f &value) {
-        component.projectionSize = value;
+        //component.projectionSize = value;
         emit valueChanged(component);
     }
 
     void overrideViewportChanged(int state) {
-        component.overrideViewport = state == Qt::Checked;
+       // component.overrideViewport = state == Qt::Checked;
         emit valueChanged(component);
     }
 
     void fitViewportChanged(int state) {
-        component.fitViewport = state == Qt::Checked;
+     //   component.fitViewport = state == Qt::Checked;
         emit valueChanged(component);
     }
 

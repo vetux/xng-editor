@@ -16,8 +16,8 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef XEDITOR_CANVASTRANSFORMCOMPONENTWIDGET_HPP
-#define XEDITOR_CANVASTRANSFORMCOMPONENTWIDGET_HPP
+#ifndef XEDITOR_RECTTRANSFORMCOMPONENTWIDGET_HPP
+#define XEDITOR_RECTTRANSFORMCOMPONENTWIDGET_HPP
 
 #include <QLineEdit>
 #include <QComboBox>
@@ -36,45 +36,45 @@ public:
     explicit AnchorWidget(QWidget *parent = nullptr) : QWidget(parent) {
         setLayout(new QHBoxLayout);
         comboBox = new QComboBox(this);
-        comboBox->addItems({"TOP_LEFT",
-                            "TOP_CENTER",
-                            "TOP_RIGHT",
-                            "LEFT",
-                            "CENTER",
-                            "RIGHT",
-                            "BOTTOM_LEFT",
-                            "BOTTOM_CENTER",
-                            "BOTTOM_RIGHT"});
+        comboBox->addItems({"RECT_ALIGN_LEFT_TOP",
+                            "RECT_ALIGN_CENTER_TOP",
+                            "RECT_ALIGN_RIGHT_TOP",
+                            "RECT_ALIGN_LEFT_CENTER",
+                            "RECT_ALIGN_CENTER_CENTER",
+                            "RECT_ALIGN_RIGHT_CENTER",
+                            "RECT_ALIGN_LEFT_BOTTOM",
+                            "RECT_ALIGN_CENTER_BOTTOM",
+                            "RECT_ALIGN_RIGHT_BOTTOM"});
         layout()->addWidget(comboBox);
         connect(comboBox, SIGNAL(activated(int)), this, SLOT(activated(int)));
     }
 
-    void setAnchor(CanvasTransformComponent::Anchor anchor) {
+    void setAnchor(RectTransform::Alignment anchor) {
         comboBox->setCurrentIndex((int) anchor);
     }
 
-    CanvasTransformComponent::Anchor getAnchor() {
-        return (CanvasTransformComponent::Anchor) comboBox->currentIndex();
+    RectTransform::Alignment getAnchor() {
+        return (RectTransform::Alignment) comboBox->currentIndex();
     }
 
 signals:
 
-    void valueChanged(CanvasTransformComponent::Anchor anchor);
+    void valueChanged(RectTransform::Alignment anchor);
 
 private slots:
 
     void activated(int index) {
-        emit valueChanged((CanvasTransformComponent::Anchor) (CanvasTransformComponent::TOP_LEFT + index));
+        emit valueChanged((RectTransform::Alignment) (RectTransform::Alignment::RECT_ALIGN_LEFT_TOP + index));
     }
 
 private:
     QComboBox *comboBox;
 };
 
-class CanvasTransformComponentWidget : public ComponentWidget {
+class RectTransformComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
-    CanvasTransformComponentWidget(QWidget *parent = nullptr) : ComponentWidget(parent) {
+    RectTransformComponentWidget(QWidget *parent = nullptr) : ComponentWidget(parent) {
         headerText->setText("Canvas Transform");
 
         anchorLabel = new QLabel(this);
@@ -119,26 +119,26 @@ public:
         connect(rotationWidget, SIGNAL(valueChanged(double)), this, SLOT(valueChanged(double)));
     }
 
-    void set(const CanvasTransformComponent &comp) {
+    void set(const RectTransformComponent &comp) {
         transform = comp;
-        anchorWidget->setAnchor(transform.anchor);
-        canvasWidget->setText(transform.canvas.c_str());
-        rectangleWidget->set(transform.rect);
-        centerWidget->set(transform.center);
-        rotationWidget->setValue(transform.rotation);
+        anchorWidget->setAnchor(transform.rectTransform.alignment);
+        //canvasWidget->setText(transform.parent.c_str());
+        rectangleWidget->set(Rectf(transform.rectTransform.position, transform.rectTransform.size));
+        centerWidget->set(transform.rectTransform.center);
+        rotationWidget->setValue(transform.rectTransform.rotation);
         headerCheckBox->setChecked(transform.enabled);
     }
 
-    const CanvasTransformComponent &get() const {
+    const RectTransformComponent &get() const {
         return transform;
     }
 
     virtual std::type_index getType() override {
-        return typeid(CanvasTransformComponentWidget);
+        return typeid(RectTransformComponentWidget);
     }
 
     std::type_index getComponentType() override {
-        return typeid(CanvasTransformComponent);
+        return typeid(RectTransformComponent);
     }
 
 protected:
@@ -149,32 +149,33 @@ protected:
 
 signals:
 
-    void valueChanged(const CanvasTransformComponent &value);
+    void valueChanged(const RectTransformComponent &value);
 
 private slots:
 
-    void valueChanged(CanvasTransformComponent::Anchor anchor) {
-        transform.anchor = anchor;
+    void valueChanged(RectTransform::Alignment anchor) {
+        transform.rectTransform.alignment = anchor;
         emit valueChanged(transform);
     }
 
     void textEdited(const QString &text) {
-        transform.canvas = text.toStdString();
+       // transform.rectTransform.parent = text.toStdString();
         emit valueChanged(transform);
     }
 
     void valueChanged(const Rectf &t) {
-        transform.rect = t;
+        transform.rectTransform.size = t.dimensions;
+        transform.rectTransform.position = t.position;
         emit valueChanged(transform);
     }
 
     void valueChanged(const Vec2f &v) {
-        transform.center = v;
+        transform.rectTransform.center = v;
         emit valueChanged(transform);
     }
 
     void valueChanged(double v) {
-        transform.rotation = v;
+        transform.rectTransform.rotation = v;
         emit valueChanged(transform);
     }
 
@@ -194,7 +195,7 @@ private:
     QLabel *rotationLabel;
     QDoubleSpinBox *rotationWidget;
 
-    CanvasTransformComponent transform;
+    RectTransformComponent transform;
 };
 
-#endif //XEDITOR_CANVASTRANSFORMCOMPONENTWIDGET_HPP
+#endif //XEDITOR_RECTTRANSFORMCOMPONENTWIDGET_HPP

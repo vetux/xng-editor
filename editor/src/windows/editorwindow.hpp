@@ -207,8 +207,6 @@ private:
     std::map<QAction *, std::string> recentProjectActions;
     std::map<std::string, QAction *> recentProjectActionsReverse;
 
-    ResourceImporter importer;
-
     std::unique_ptr<Library> pluginLibrary;
 
     BuildDialog *buildDialog;

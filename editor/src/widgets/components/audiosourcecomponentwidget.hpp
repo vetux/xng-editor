@@ -95,7 +95,7 @@ protected:
 private slots:
 
     void onUriChanged(const QString &uri) {
-        component.audio = ResourceHandle<Audio>(Uri(uri.toStdString().c_str()));
+        component.audio = ResourceHandle<AudioData>(Uri(uri.toStdString().c_str()));
         emit valueChanged(component);
     }
 

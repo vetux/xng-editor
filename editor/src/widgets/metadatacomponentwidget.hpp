@@ -25,6 +25,8 @@
 
 #include <QSpinBox>
 
+#include "headertool/componentmetadata.hpp"
+
 /**
 * The list of supported types for XVARIABLE invocations
 */
@@ -49,6 +51,7 @@ enum VariableType {
     TYPE_RESOURCE_HANDLE,
     TYPE_URI,
     TYPE_ENTITY_NAME,
+
     //      - Assets -
     TYPE_AUDIO,
     TYPE_COLOR,
@@ -61,6 +64,7 @@ enum VariableType {
     TYPE_SPRITE,
     TYPE_TEXTURE,
     TYPE_SPRITE_ANIMATION,
+
     //      - Math -
     TYPE_GRID,
     TYPE_MATRIX,
@@ -158,8 +162,8 @@ public:
                         defaultValue = std::stoi(metadata.defaultValue);
                     } catch (const std::exception &e) {}
                     int val = defaultValue;
-                    if (message.getType() == xng::Message::INT) {
-                        val = message.asInt();
+                    if (value.getType() == xng::Message::SIGNED_INTEGER) {
+                        val = value.asInt();
                     }
                     int min = std::numeric_limits<int>::min();
                     int max = std::numeric_limits<int>::max();

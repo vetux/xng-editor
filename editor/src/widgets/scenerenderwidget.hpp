@@ -77,7 +77,7 @@ protected:
         if (event->type() == QEvent::None) {
             try {
                 auto &ev = dynamic_cast<RenderEvent &>(*event);
-                label->setPixmap(QPixmap::fromImage(QImage((const uchar *) ev.image->getData(),
+                label->setPixmap(QPixmap::fromImage(QImage((const uchar *) ev.image->getBuffer().data(),
                                                            ev.image->getWidth(),
                                                            ev.image->getHeight(),
                                                            ev.image->getWidth() * sizeof(ColorRGBA),

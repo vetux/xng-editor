@@ -33,6 +33,8 @@
 #include "widgets/vector3widget.hpp"
 #include "widgets/urilistwidget.hpp"
 
+//TODO: Rewrite physics component widgets
+
 class RigidBodyComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
@@ -214,9 +216,9 @@ public:
 
         typeWidget->setCurrentIndex(typeMappingReverse.at(component.type));
 
-        lockedAxeXWidget->setChecked(component.lockedAxes.x);
-        lockedAxeYWidget->setChecked(component.lockedAxes.y);
-        lockedAxeZWidget->setChecked(component.lockedAxes.z);
+        lockedAxeXWidget->setChecked(component.angularFactor.x);
+        lockedAxeYWidget->setChecked(component.angularFactor.y);
+        lockedAxeZWidget->setChecked(component.angularFactor.z);
 
         velocityWidget->set(component.velocity);
         angularVelocityWidget->set(component.angularVelocity);
@@ -235,11 +237,11 @@ public:
 
         gravityScaleWidget->setValue(component.gravityScale);
 
-        std::vector<Uri> uris;
+      /*  std::vector<Uri> uris;
         for (auto &v: component.colliders) {
             uris.emplace_back(v.getUri());
         }
-        collidersWidget->set(uris);
+        collidersWidget->set(uris);*/
 
         headerCheckBox->setChecked(component.enabled);
     }
@@ -274,17 +276,17 @@ private slots:
     }
 
     void lockedAxisXChanged(int state) {
-        component.lockedAxes.x = state == Qt::Checked;
+        component.angularFactor.x = state == Qt::Checked;
         emit valueChanged(component);
     }
 
     void lockedAxisYChanged(int state) {
-        component.lockedAxes.y = state == Qt::Checked;
+        component.angularFactor.y = state == Qt::Checked;
         emit valueChanged(component);
     }
 
     void lockedAxisZChanged(int state) {
-        component.lockedAxes.z = state == Qt::Checked;
+        component.angularFactor.z = state == Qt::Checked;
         emit valueChanged(component);
     }
 
@@ -349,10 +351,10 @@ private slots:
     }
 
     void collidersChanged(const std::vector<Uri> &colliders) {
-        component.colliders.clear();
+      /*  component.colliders.clear();
         for (auto &c: colliders) {
             component.colliders.emplace_back(ResourceHandle<ColliderDesc>(c));
-        }
+        }*/
         emit valueChanged(component);
     }
 

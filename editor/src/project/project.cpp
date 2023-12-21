@@ -19,7 +19,8 @@
 
 #include "project/project.hpp"
 
-#include "xng/asset/scene.hpp"
+#include "xng/render/scene.hpp"
+
 #include "xng/io/protocol/jsonprotocol.hpp"
 #include "xng/io/archive/directoryarchive.hpp"
 

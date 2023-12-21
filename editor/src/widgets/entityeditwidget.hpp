@@ -202,7 +202,7 @@ private slots:
         emit updateComponent(value);
     }
 
-    void valueChanged(const CanvasTransformComponent &value) {
+    void valueChanged(const RectTransformComponent &value) {
         emit updateComponent(value);
     }
 
@@ -210,7 +210,7 @@ private slots:
         emit updateComponent(value);
     }
 
-    void valueChanged(const MeshRenderComponent &value) {
+    void valueChanged(const SkinnedMeshComponent &value) {
         emit updateComponent(value);
     }
 

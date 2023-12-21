@@ -29,6 +29,7 @@
 #include "project/buildplatform.hpp"
 
 #include "xng/io/message.hpp"
+#include "xng/io/messageable.hpp"
 #include "xng/io/library.hpp"
 
 #include "io/paths.hpp"

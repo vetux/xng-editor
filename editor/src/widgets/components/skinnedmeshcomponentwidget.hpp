@@ -16,28 +16,28 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef XEDITOR_MESHRENDERCOMPONENTWIDGET_HPP
-#define XEDITOR_MESHRENDERCOMPONENTWIDGET_HPP
+#ifndef XEDITOR_SKINNEDMESHCOMPONENTWIDGET_HPP
+#define XEDITOR_SKINNEDMESHCOMPONENTWIDGET_HPP
 
 #include "widgets/components/componentwidget.hpp"
 #include "widgets/vector3widget.hpp"
 
 #include "xng/xng.hpp"
 
-class MeshRenderComponentWidget : public ComponentWidget {
+class SkinnedMeshComponentWidget : public ComponentWidget {
 Q_OBJECT
 public:
-    explicit MeshRenderComponentWidget(QWidget *parent = nullptr)
+    explicit SkinnedMeshComponentWidget(QWidget *parent = nullptr)
             : ComponentWidget(parent) {
         headerText->setText("Mesh");
     }
 
-    void set(const MeshRenderComponent &value) {
+    void set(const SkinnedMeshComponent &value) {
         component = value;
         headerCheckBox->setChecked(component.enabled);
     }
 
-    const MeshRenderComponent &get() const {
+    const SkinnedMeshComponent &get() const {
         return component;
     }
 
@@ -46,12 +46,12 @@ public:
     }
 
     std::type_index getComponentType() override {
-        return typeid(MeshRenderComponent);
+        return typeid(SkinnedMeshComponent);
     }
 
 signals:
 
-    void valueChanged(const MeshRenderComponent &value);
+    void valueChanged(const SkinnedMeshComponent &value);
 
 protected:
     void checkBoxStateChange(int state) override {
@@ -60,7 +60,7 @@ protected:
     }
 
 private:
-    MeshRenderComponent component;
+    SkinnedMeshComponent component;
 };
 
-#endif //XEDITOR_MESHRENDERCOMPONENTWIDGET_HPP
+#endif //XEDITOR_SKINNEDMESHCOMPONENTWIDGET_HPP

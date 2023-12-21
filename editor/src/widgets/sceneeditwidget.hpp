@@ -176,7 +176,7 @@ private slots:
 
         auto *menu = new QMenu(this);
         menu->addAction(new ComponentAddAction("Transform", typeid(TransformComponent), this));
-        menu->addAction(new ComponentAddAction("Canvas Transform", typeid(CanvasTransformComponent), this));
+        menu->addAction(new ComponentAddAction("Rect Transform", typeid(RectTransformComponent), this));
 
         auto *menuSound = new QMenu("Sound", this);
         menuSound->addAction(new ComponentAddAction("Audio Source", typeid(AudioSourceComponent), this));
@@ -188,7 +188,7 @@ private slots:
         auto *menu3D = new QMenu("3D", this);
         menu3D->addAction(new ComponentAddAction("Camera", typeid(CameraComponent), this));
         menu3D->addAction(new ComponentAddAction("Light", typeid(LightComponent), this));
-        menu3D->addAction(new ComponentAddAction("Mesh", typeid(MeshRenderComponent), this));
+        menu3D->addAction(new ComponentAddAction("Skinned Mesh", typeid(SkinnedMeshComponent), this));
         menu3D->addAction(new ComponentAddAction("Skybox", typeid(SkyboxComponent), this));
 
         auto *menu2D = new QMenu("2D", this);

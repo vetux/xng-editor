@@ -24,9 +24,9 @@
 #include "widgets/components/buttoncomponentwidget.hpp"
 #include "widgets/components/cameracomponentwidget.hpp"
 #include "widgets/components/canvascomponentwidget.hpp"
-#include "widgets/components/canvastransformcomponentwidget.hpp"
+#include "widgets/components/recttransformcomponentwidget.hpp"
 #include "widgets/components/lightcomponentwidget.hpp"
-#include "widgets/components/meshrendercomponentwidget.hpp"
+#include "widgets/components/skinnedmeshcomponentwidget.hpp"
 #include "widgets/components/rigidbodycomponentwidget.hpp"
 #include "widgets/components/skyboxcomponentwidget.hpp"
 #include "widgets/components/spriteanimationcomponentwidget.hpp"
@@ -48,17 +48,17 @@ void EntityEditWidget::createComponentWidgets(const std::map<std::string, Compon
         components[typeid(TransformComponent)] = widget;
     }
 
-    if (entity.checkComponent<CanvasTransformComponent>()) {
-        auto *widget = new CanvasTransformComponentWidget(this);
-        widget->set(entity.getComponent<CanvasTransformComponent>());
+    if (entity.checkComponent<RectTransformComponent>()) {
+        auto *widget = new RectTransformComponentWidget(this);
+        widget->set(entity.getComponent<RectTransformComponent>());
         connect(widget,
                 SIGNAL(destroyPressed()),
                 this,
                 SLOT(destroyPressed()));
-        connect(widget, SIGNAL(valueChanged(const CanvasTransformComponent &)), this,
-                SLOT(valueChanged(const CanvasTransformComponent &)));
+        connect(widget, SIGNAL(valueChanged(const RectTransformComponent &)), this,
+                SLOT(valueChanged(const RectTransformComponent &)));
         addComponentWidget(widget);
-        components[typeid(CanvasTransformComponent)] = widget;
+        components[typeid(RectTransformComponent)] = widget;
     }
 
     if (entity.checkComponent<AudioListenerComponent>()) {
@@ -139,17 +139,17 @@ void EntityEditWidget::createComponentWidgets(const std::map<std::string, Compon
         components[typeid(LightComponent)] = widget;
     }
 
-    if (entity.checkComponent<MeshRenderComponent>()) {
-        auto *widget = new MeshRenderComponentWidget(this);
-        widget->set(entity.getComponent<MeshRenderComponent>());
+    if (entity.checkComponent<SkinnedMeshComponent>()) {
+        auto *widget = new SkinnedMeshComponentWidget(this);
+        widget->set(entity.getComponent<SkinnedMeshComponent>());
         connect(widget,
                 SIGNAL(destroyPressed()),
                 this,
                 SLOT(destroyPressed()));
-        connect(widget, SIGNAL(valueChanged(const MeshRenderComponent &)), this,
-                SLOT(valueChanged(const MeshRenderComponent &)));
+        connect(widget, SIGNAL(valueChanged(const SkinnedMeshComponent &)), this,
+                SLOT(valueChanged(const SkinnedMeshComponent &)));
         addComponentWidget(widget);
-        components[typeid(MeshRenderComponent)] = widget;
+        components[typeid(SkinnedMeshComponent)] = widget;
     }
 
     if (entity.checkComponent<RigidBodyComponent>()) {

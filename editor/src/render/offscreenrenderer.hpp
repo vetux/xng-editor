@@ -25,6 +25,12 @@
 
 #include "xng/xng.hpp"
 
+#include "xng/driver/glfw/glfwdisplaydriver.hpp"
+#include "xng/driver/opengl/oglgpudriver.hpp"
+#include "xng/driver/freetype/ftfontdriver.hpp"
+#include "xng/driver/spirv-cross/spirvcrossdecompiler.hpp"
+#include "xng/driver/glslang/glslangcompiler.hpp"
+
 using namespace xng;
 
 /**
@@ -38,17 +44,18 @@ public:
     explicit OffscreenRenderer(float frameRate,
                                Vec2i frameSize)
             : frameRate(frameRate),
-              frameSize(std::move(frameSize)),
-              displayDriver(DisplayDriver::load(GLFW)),
-              gpuDriver(GpuDriver::load(OPENGL_4_6)),
-              shaderCompiler(SPIRVCompiler::load(SHADERC)),
-              shaderDecompiler(SPIRVDecompiler::load(SPIRV_CROSS)),
-              fontDriver(FontDriver::load(FREETYPE)) {
+              frameSize(std::move(frameSize)) {
         thread = std::thread([this]() {
-            window = displayDriver->createWindow("opengl",
-                                                 "Render Window",
-                                                 {1, 1},
-                                                 {.visible = false});
+            displayDriver = std::make_unique<glfw::GLFWDisplayDriver>();
+            gpuDriver = std::make_unique<opengl::OGLGpuDriver> ();
+            shaderCompiler = std::make_unique<glslang::GLSLangCompiler>();
+            shaderDecompiler = std::make_unique<spirv_cross::SpirvCrossDecompiler>();
+            fontDriver = std::make_unique<freetype::FtFontDriver>();
+
+            window = displayDriver->createWindow(xng::OPENGL_4_6,
+                                                      "Render Window",
+                                                      {1, 1},
+                                                      {.visible = false});
             device = gpuDriver->createRenderDevice();
             target = device->createRenderTarget(RenderTargetDesc{.size = this->frameSize,
                     .multisample = false,
@@ -57,15 +64,15 @@ public:
             desc.size = this->frameSize;
             desc.bufferType = HOST_VISIBLE;
             texture = device->createTextureBuffer(desc);
-            target->setColorAttachments({*texture});
+            target->setAttachments({RenderTargetAttachment::texture(*texture)});
 
             ren2d = std::make_unique<Renderer2D>(*device, *shaderCompiler, *shaderDecompiler);
 
-            frameGraphRenderer = std::make_unique<FrameGraphRenderer>(*target,
-                                                                      std::make_unique<FrameGraphPoolAllocator>(
-                                                                              *device,
-                                                                              *shaderCompiler,
-                                                                              *shaderDecompiler));
+            frameGraphRenderer = std::make_unique<FrameGraphRenderer>(std::make_unique<FrameGraphRuntimeSimple>(
+                    *target,
+                    *device,
+                    *shaderCompiler,
+                    *shaderDecompiler));
 
             canvasRenderSystem = std::make_shared<CanvasRenderSystem>(*ren2d, *target, *fontDriver);
             meshRenderSystem = std::make_shared<MeshRenderSystem>(*frameGraphRenderer);
@@ -96,7 +103,7 @@ public:
         sceneChanged = true;
     }
 
-    void setFrameGraphLayout(const FrameGraphLayout &value) {
+    void setFrameGraphPipeline(const FrameGraphPipeline &value) {
         std::lock_guard<std::mutex> guard(mutex);
         layout = value;
         layoutChanged = true;
@@ -141,7 +148,7 @@ private:
     void loop() {
         auto frameStart = std::chrono::high_resolution_clock::now();
         auto lastFrame = std::chrono::high_resolution_clock::now();
-        DeltaTime deltaTime = 0;
+        DeltaTime deltaTime;
         while (!shutdown) {
 #ifndef XEDITOR_DEBUGGING
             try {
@@ -149,7 +156,7 @@ private:
             ren2d->renderClear(*target, ColorRGBA::black(), {}, frameSize);
             std::lock_guard<std::mutex> guard(mutex);
             if (layoutChanged) {
-                frameGraphRenderer->setLayout(layout);
+                frameGraphRenderer->setPipeline(layout);
                 layoutChanged = false;
             }
             if (sceneChanged) {
@@ -157,7 +164,7 @@ private:
                 sceneChanged = false;
             }
             if (frameSizeChanged) {
-                target->setColorAttachments({});
+                target->clearAttachments();
                 RenderTargetDesc rdesc;
                 rdesc.size = frameSize;
                 rdesc.numberOfColorAttachments = 1;
@@ -166,15 +173,15 @@ private:
                 desc.size = frameSize;
                 desc.bufferType = HOST_VISIBLE;
                 texture = device->createTextureBuffer(desc);
-                target->setColorAttachments({*texture});
+                target->setAttachments({RenderTargetAttachment::texture(*texture)});
                 frameSizeChanged = false;
                 runtime.stop();
                 runtime.setPipelines({});
-                frameGraphRenderer = std::make_unique<FrameGraphRenderer>(*target,
-                                                                          std::make_unique<FrameGraphPoolAllocator>(
-                                                                                  *device,
-                                                                                  *shaderCompiler,
-                                                                                  *shaderDecompiler));
+                frameGraphRenderer = std::make_unique<FrameGraphRenderer>(std::make_unique<FrameGraphRuntimeSimple>(
+                        *target,
+                        *device,
+                        *shaderCompiler,
+                        *shaderDecompiler));
 
                 canvasRenderSystem = std::make_unique<CanvasRenderSystem>(*ren2d, *target, *fontDriver);
                 meshRenderSystem = std::make_unique<MeshRenderSystem>(*frameGraphRenderer);
@@ -227,12 +234,11 @@ private:
     std::shared_ptr<EntityScene> scene;
     bool sceneChanged = false;
 
-    std::unique_ptr<DisplayDriver> displayDriver;
-    std::unique_ptr<GpuDriver> gpuDriver;
-    std::unique_ptr<SPIRVCompiler> shaderCompiler;
-    std::unique_ptr<SPIRVDecompiler> shaderDecompiler;
-
-    std::unique_ptr<FontDriver> fontDriver;
+    std::unique_ptr<glfw::GLFWDisplayDriver> displayDriver;
+    std::unique_ptr<opengl::OGLGpuDriver> gpuDriver;
+    std::unique_ptr<glslang::GLSLangCompiler> shaderCompiler;
+    std::unique_ptr<spirv_cross::SpirvCrossDecompiler> shaderDecompiler;
+    std::unique_ptr<freetype::FtFontDriver> fontDriver;
 
     std::unique_ptr<Window> window;
 
@@ -242,10 +248,9 @@ private:
 
     std::unique_ptr<Renderer2D> ren2d;
 
-    FrameGraphLayout layout;
+    FrameGraphPipeline layout;
     bool layoutChanged = false;
 
-    std::unique_ptr<FrameGraphPoolAllocator> frameGraphAllocator;
     std::unique_ptr<FrameGraphRenderer> frameGraphRenderer;
 
     std::shared_ptr<CanvasRenderSystem> canvasRenderSystem;

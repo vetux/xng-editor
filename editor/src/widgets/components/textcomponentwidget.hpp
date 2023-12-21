@@ -50,19 +50,19 @@ public:
         textColorWidget = new ColorWidget;
         layerWidget = new QSpinBox;
 
-        alignmentMapping[0] = xng::ALIGN_LEFT;
-        alignmentMapping[1] = xng::ALIGN_CENTER;
-        alignmentMapping[2] = xng::ALIGN_RIGHT;
+        alignmentMapping[0] = xng::TEXT_ALIGN_LEFT;
+        alignmentMapping[1] = xng::TEXT_ALIGN_CENTER;
+        alignmentMapping[2] = xng::TEXT_ALIGN_RIGHT;
 
         for (auto &pair: alignmentMapping)
             alignmentMappingReverse[pair.second] = pair.first;
 
-        for (auto i = (int)CanvasTransformComponent::TOP_LEFT; i <= CanvasTransformComponent::BOTTOM_RIGHT; i++) {
+      /*  for (auto i = (int)CanvasTransformComponent::TOP_LEFT; i <= CanvasTransformComponent::BOTTOM_RIGHT; i++) {
             anchorMapping[i] = (CanvasTransformComponent::Anchor)i;
         }
 
         for (auto &pair: anchorMapping)
-            anchorMappingReverse[pair.second] = pair.first;
+            anchorMappingReverse[pair.second] = pair.first;*/
 
         alignmentWidget->setModel(new QStringListModel({
                                                                "ALIGN_LEFT",
@@ -159,8 +159,8 @@ public:
         lineSpacingWidget->setValue(value.lineSpacing);
         alignmentWidget->setCurrentIndex(alignmentMappingReverse.at(value.alignment));
         fontWidget->setValue(value.font.getUri());
-        textAnchorWidget->setCurrentIndex(anchorMappingReverse.at(value.textAnchor));
-        layerWidget->setValue(value.layer);
+      /*  textAnchorWidget->setCurrentIndex(anchorMappingReverse.at(value.textAnchor));
+        layerWidget->setValue(value.layer);*/
         headerCheckBox->setChecked(component.enabled);
     }
 
@@ -219,12 +219,12 @@ private slots:
     }
 
     void fontChanged(const QString &uri) {
-        component.font = ResourceHandle<RawResource>(Uri(uri.toStdString().c_str()));
+     //   component.font = ResourceHandle<RawResource>(Uri(uri.toStdString().c_str()));
         emit valueChanged(component);
     }
 
     void textAnchorChanged(int index) {
-        component.textAnchor = anchorMapping.at(index);
+      //  component.textAnchor = anchorMapping.at(index);
         emit valueChanged(component);
     }
 
@@ -239,7 +239,7 @@ private slots:
     }
 
     void layerChanged(int v) {
-        component.layer = v;
+        //component.layer = v;
         emit valueChanged(component);
     }
 
@@ -257,11 +257,8 @@ private:
     ColorWidget *textColorWidget;
     QSpinBox *layerWidget;
 
-    std::map<int, Alignment> alignmentMapping;
-    std::map<Alignment, int> alignmentMappingReverse;
-
-    std::map<int, CanvasTransformComponent::Anchor> anchorMapping;
-    std::map<CanvasTransformComponent::Anchor, int> anchorMappingReverse;
+    std::map<int, TextAlignment> alignmentMapping;
+    std::map<TextAlignment, int> alignmentMappingReverse;
 };
 
 #endif //XEDITOR_TEXTCOMPONENTWIDGET_HPP
