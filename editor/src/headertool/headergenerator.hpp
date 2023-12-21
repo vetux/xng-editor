@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include "componentmetadata.hpp"
+#include "headertool/componentmetadata.hpp"
 
 namespace xng {
     class XENGINE_EXPORT HeaderGenerator {

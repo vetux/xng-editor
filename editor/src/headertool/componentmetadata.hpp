@@ -25,7 +25,7 @@
 #include <string>
 #include <map>
 
-#include "token.hpp"
+#include "headertool/token.hpp"
 
 namespace xng {
     struct ComponentMetadata {

@@ -23,7 +23,7 @@
 #include <vector>
 #include <istream>
 
-#include "token.hpp"
+#include "headertool/token.hpp"
 
 namespace xng {
     /**

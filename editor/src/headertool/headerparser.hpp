@@ -23,10 +23,9 @@
 #include <vector>
 #include <functional>
 
-#include "componentmetadata.hpp"
-#include "token.hpp"
-
-#include "syntaxexception.hpp"
+#include "headertool/componentmetadata.hpp"
+#include "headertool/token.hpp"
+#include "headertool/syntaxexception.hpp"
 
 namespace xng {
     class XENGINE_EXPORT HeaderParser {
