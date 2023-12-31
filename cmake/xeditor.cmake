@@ -16,4 +16,4 @@ else ()
 endif ()
 
 target_include_directories(xeditor PUBLIC ${Engine.Dir.INCLUDE} ${XEditor.Dir.INCLUDE} ${XEditor.Dir.SRC})
-target_link_libraries(xeditor xengine Threads::Threads Qt5::Core Qt5::Widgets)
+target_link_libraries(xeditor xengine-static Threads::Threads Qt5::Core Qt5::Widgets)

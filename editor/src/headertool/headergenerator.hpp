@@ -1,6 +1,6 @@
 /**
- *  This file is part of xEngine, a C++ game engine library.
- *  Copyright (C) 2023  Julian Zampiccoli
+ *  xEditor - Editor and tools for creating games
+ *  Copyright (C) 2021  Julian Zampiccoli
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,7 @@
 #include "headertool/componentmetadata.hpp"
 
 namespace xng {
-    class XENGINE_EXPORT HeaderGenerator {
+    class HeaderGenerator {
     public:
         std::string generateHeader(const ComponentMetadata &metadata);
     };

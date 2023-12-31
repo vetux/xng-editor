@@ -15,6 +15,17 @@ endif ()
 
 include(config.cmake OPTIONAL)
 
+set(XNG_SUBMODULE_PATH engine/)
+file(GLOB RESULT ${XNG_SUBMODULE_PATH}*)
+list(LENGTH RESULT RES_LEN)
+if (RES_LEN GREATER 0)
+    add_subdirectory(${XNG_SUBMODULE_PATH})
+else ()
+    message(WARNING "XNG Submodule not found. Please download the submodule or provide the xEngine headers and libraries yourself.")
+endif ()
+
+add_compile_definitions(XENGINE_EXPORT=)
+
 include(cmake/xeditor.cmake)
 
 # Uncomment to enable syntax highlighting of the template source code
